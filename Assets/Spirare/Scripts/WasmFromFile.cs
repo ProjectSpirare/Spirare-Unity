@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace UniWasm
+namespace Spirare
 {
     public class WasmFromFile : WasmBehaviour
     {

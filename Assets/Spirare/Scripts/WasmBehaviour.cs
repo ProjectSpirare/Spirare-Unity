@@ -5,7 +5,7 @@ using UnityEngine;
 using Wasm;
 using Wasm.Interpret;
 
-namespace UniWasm
+namespace Spirare
 {
     public class WasmBehaviour : MonoBehaviour
     {

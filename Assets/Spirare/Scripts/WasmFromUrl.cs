@@ -3,7 +3,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using UnityEngine;
 
-namespace UniWasm
+namespace Spirare
 {
     public class WasmFromUrl : WasmBehaviour
     {

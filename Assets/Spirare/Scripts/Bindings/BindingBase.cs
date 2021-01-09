@@ -5,7 +5,7 @@ using System.Text;
 using UnityEngine;
 using Wasm.Interpret;
 
-namespace UniWasm
+namespace Spirare
 {
     public abstract class BindingBase
     {

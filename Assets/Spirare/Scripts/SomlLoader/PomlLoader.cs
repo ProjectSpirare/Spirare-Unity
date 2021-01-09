@@ -6,7 +6,7 @@ using System.Linq;
 using System.Xml;
 using UnityEngine;
 
-namespace UniWasm
+namespace Spirare
 {
     public class PomlLoader : MonoBehaviour
     {

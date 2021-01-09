@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using Wasm;
 
-namespace UniWasm
+namespace Spirare
 {
-    public static class UniWasmUtils
+    public static class SpirareUtils
     {
         public static IReadOnlyList<object> Unit = new object[0];
     }

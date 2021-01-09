@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Wasm.Interpret;
 
-namespace UniWasm
+namespace Spirare
 {
     public class PhysicsBinding : BindingBase
     {
@@ -40,7 +40,7 @@ namespace UniWasm
         {
             if (arg.Count != 4)
             {
-                return UniWasmUtils.Unit;
+                return SpirareUtils.Unit;
             }
             var objectId = (int)arg[0];
 
@@ -54,22 +54,22 @@ namespace UniWasm
 
             if (!TryGetRigidbody(key, out var rigidbody))
             {
-                return UniWasmUtils.Unit;
+                return SpirareUtils.Unit;
             }
 
             rigidbody.velocity = velocity;
-            return UniWasmUtils.Unit;
+            return SpirareUtils.Unit;
         }
 */
         private IReadOnlyList<object> SetWorldVelocity(IReadOnlyList<object> arg)
         {
 
-            return UniWasmUtils.Unit;
+            return SpirareUtils.Unit;
 
             /*
             if (arg.Count != 4)
             {
-                return UniWasmUtils.Unit;
+                return SpirareUtils.Unit;
             }
             var objectId = (int)arg[0];
 
@@ -83,11 +83,11 @@ namespace UniWasm
 
             if (!TryGetRigidbody(key, out var rigidbody))
             {
-                return UniWasmUtils.Unit;
+                return SpirareUtils.Unit;
             }
 
             rigidbody.velocity = velocity;
-            return UniWasmUtils.Unit;
+            return SpirareUtils.Unit;
             */
         }
 

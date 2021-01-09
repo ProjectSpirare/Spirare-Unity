@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Wasm.Interpret;
 
-namespace UniWasm
+namespace Spirare
 {
     public class ArgsBinding : BindingBase
     {

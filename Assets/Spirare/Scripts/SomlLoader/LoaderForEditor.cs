@@ -4,7 +4,7 @@ using System.Xml;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-namespace UniWasm
+namespace Spirare
 {
     public class LoaderForEditor : PomlLoader
     {

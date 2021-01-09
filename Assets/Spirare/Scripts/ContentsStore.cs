@@ -2,7 +2,7 @@
 using System.Linq;
 using UnityEngine;
 
-namespace UniWasm
+namespace Spirare
 {
     public class Resource
     {
