@@ -1,0 +1,10 @@
+{
+  "name": "com.tarukosu.spirare",
+  "version": "0.1.0",
+  "displayName": "Spirare",
+  "description": "",
+  "unity": "2018.4",
+  "author": {
+    "name": "@tarukosu (Yusuke Furuta)"
+  }
+}
