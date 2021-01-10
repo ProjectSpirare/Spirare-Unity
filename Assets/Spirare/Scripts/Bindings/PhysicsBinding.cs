@@ -7,101 +7,54 @@ namespace Spirare
 {
     public class PhysicsBinding : BindingBase
     {
-        private Dictionary<string, Rigidbody> rigidbodyDictionary = new Dictionary<string, Rigidbody>();
+        private Dictionary<int, Rigidbody> rigidbodyDictionary = new Dictionary<int, Rigidbody>();
 
         public PhysicsBinding(Element element, ContentsStore store) : base(element, store)
         {
         }
 
-
         public override PredefinedImporter GenerateImporter()
         {
             var importer = new PredefinedImporter();
 
-            /*
-            importer.DefineFunction("physics_set_local_velocity",
-                 new DelegateFunctionDefinition(
-                     ValueType.IdAndVector3,
-                     ValueType.Unit,
-                     SetLocalVelocity
-                     ));
-            */
             importer.DefineFunction("physics_set_world_velocity",
-                 new DelegateFunctionDefinition(
-                     ValueType.IdAndVector3,
-                     ValueType.Unit,
-                     SetWorldVelocity
-                     ));
+                new DelegateFunctionDefinition(
+                ValueType.IdAndVector3,
+                ValueType.Unit,
+                SetWorldVelocity
+            ));
             return importer;
         }
 
-        /*
-        private IReadOnlyList<object> SetLocalVelocity(IReadOnlyList<object> arg)
-        {
-            if (arg.Count != 4)
-            {
-                return SpirareUtils.Unit;
-            }
-            var objectId = (int)arg[0];
-
-            var x = (float)arg[1];
-            var y = (float)arg[2];
-            var z = (float)arg[3];
-            var velocity = new Vector3(x, y, z);
-
-            Debug.Log(objectId);
-            var key = objectId.ToString();
-
-            if (!TryGetRigidbody(key, out var rigidbody))
-            {
-                return SpirareUtils.Unit;
-            }
-
-            rigidbody.velocity = velocity;
-            return SpirareUtils.Unit;
-        }
-*/
         private IReadOnlyList<object> SetWorldVelocity(IReadOnlyList<object> arg)
         {
-
-            return SpirareUtils.Unit;
-
-            /*
-            if (arg.Count != 4)
+            var parser = new ArgumentParser(arg);
+            if (!TryGetElementWithArg(parser, store, out var element))
             {
-                return SpirareUtils.Unit;
+                return ReturnValue.Unit;
             }
-            var objectId = (int)arg[0];
 
-            var x = (float)arg[1];
-            var y = (float)arg[2];
-            var z = (float)arg[3];
-            var velocity = new Vector3(x, y, z);
+            if (!parser.TryReadVector3(out var velocity))
+            {
+                return ReturnValue.Unit;
+            }
 
-            Debug.Log(objectId);
-            var key = objectId.ToString();
-
-            if (!TryGetRigidbody(key, out var rigidbody))
+            if (!TryGetRigidbody(element, out var rigidbody))
             {
                 return SpirareUtils.Unit;
             }
 
             rigidbody.velocity = velocity;
+
             return SpirareUtils.Unit;
-            */
         }
 
-
-        /*
-        private bool TryGetRigidbody(string key, out Rigidbody rigidbody)
+        private bool TryGetRigidbody(Element element, out Rigidbody rigidbody)
         {
-            if (!rigidbodyDictionary.TryGetValue(key, out rigidbody))
+            var elementIndex = element.ElementIndex;
+            if (!rigidbodyDictionary.TryGetValue(elementIndex, out rigidbody))
             {
-                if (!store.Objects.TryGetValue(key, out var gameObject))
-                {
-                    return false;
-                }
-
+                var gameObject = element.GameObject;
                 rigidbody = gameObject.GetComponent<Rigidbody>();
                 if (rigidbody == null)
                 {
@@ -109,11 +62,10 @@ namespace Spirare
                     rigidbody.useGravity = false;
                 }
 
-                rigidbodyDictionary[key] = rigidbody;
+                rigidbodyDictionary[elementIndex] = rigidbody;
             }
 
             return true;
         }
-        */
     }
 }
