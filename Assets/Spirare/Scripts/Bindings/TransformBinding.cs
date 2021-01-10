@@ -88,93 +88,42 @@ namespace Spirare
                      SetWorldScale
                      ));
 
-            /*
-            importer.DefineFunction("transform_get_local_position_y",
-                 new DelegateFunctionDefinition(
-                     ValueType.ObjectId,
-                     ValueType.Float,
-                     _ => new object[] { transform.localPosition.y }
-                     ));
-            importer.DefineFunction("transform_get_local_position_z",
-                 new DelegateFunctionDefinition(
-                     ValueType.ObjectId,
-                     ValueType.Float,
-                     _ => new object[] { transform.localPosition.z }
-                     ));
-            // local rotation
+            // Local rotation
+            var quaternionElements = Enum.GetValues(typeof(QuaternionElementType));
+            foreach (QuaternionElementType axis in quaternionElements)
+            {
+                importer.DefineFunction($"transform_get_local_rotation_{axis}",
+                     new DelegateFunctionDefinition(
+                         ValueType.ObjectId,
+                         ValueType.Float,
+                         arg => GetTransformValue(arg, t => t.localRotation.GetSpecificValue(axis))
+                         ));
+            }
+
             importer.DefineFunction("transform_set_local_rotation",
                  new DelegateFunctionDefinition(
-                     ValueType.Quaternion,
+                     ValueType.IdAndQuaternion,
                      ValueType.Unit,
                      SetLocalRotation
                      ));
-            importer.DefineFunction("transform_get_local_rotation",
-                 new DelegateFunctionDefinition(
-                     ValueType.Unit,
-                     ValueType.Quaternion,
-                     GetLocalRotation
-                     ));
 
-            // world rotation
+            // World position
+            foreach (QuaternionElementType axis in quaternionElements)
+            {
+                importer.DefineFunction($"transform_get_world_rotation_{axis}",
+                     new DelegateFunctionDefinition(
+                         ValueType.ObjectId,
+                         ValueType.Float,
+                         arg => GetTransformValue(arg, t => t.rotation.GetSpecificValue(axis))
+                         ));
+            }
+
             importer.DefineFunction("transform_set_world_rotation",
                  new DelegateFunctionDefinition(
                      ValueType.IdAndQuaternion,
                      ValueType.Unit,
                      SetWorldRotation
                      ));
-            importer.DefineFunction("transform_get_world_rotation_x",
-                 new DelegateFunctionDefinition(
-                     ValueType.ObjectId,
-                     ValueType.Float,
-                     _ => new object[] { transform.rotation.x }
-                     ));
-            importer.DefineFunction("transform_get_world_rotation_y",
-                 new DelegateFunctionDefinition(
-                     ValueType.ObjectId,
-                     ValueType.Float,
-                     _ => new object[] { transform.rotation.y }
-                     ));
-            importer.DefineFunction("transform_get_world_rotation_z",
-                 new DelegateFunctionDefinition(
-                     ValueType.ObjectId,
-                     ValueType.Float,
-                     _ => new object[] { transform.rotation.z }
-                     ));
-            importer.DefineFunction("transform_get_world_rotation_w",
-                 new DelegateFunctionDefinition(
-                     ValueType.ObjectId,
-                     ValueType.Float,
-                     _ => new object[] { transform.rotation.w }
-                     ));
-
-            importer.DefineFunction("transform_set_local_scale",
-                 new DelegateFunctionDefinition(
-                     ValueType.Vector3,
-                     ValueType.Unit,
-                     SetLocalScale
-                     ));
-            */
-
-            /*
-            importer.DefineFunction("transform_get_local_scale_x",
-                 new DelegateFunctionDefinition(
-                     ValueType.ObjectId,
-                     ValueType.Float,
-                     _ => new object[] { transform.localScale.x }
-                     ));
-            importer.DefineFunction("transform_get_local_scale_y",
-                 new DelegateFunctionDefinition(
-                     ValueType.ObjectId,
-                     ValueType.Float,
-                     _ => new object[] { transform.localScale.y }
-                     ));
-            importer.DefineFunction("transform_get_local_scale_z",
-                 new DelegateFunctionDefinition(
-                     ValueType.ObjectId,
-                     ValueType.Float,
-                     _ => new object[] { transform.localScale.z }
-                     ));
-            */
             return importer;
         }
 
@@ -253,6 +202,10 @@ namespace Spirare
             return SetVector3(arg, (t, v) => t.localScale = v);
         }
 
+        private IReadOnlyList<object> SetWorldScale(IReadOnlyList<object> arg)
+        {
+            return SetVector3(arg, SetWorldScale);
+        }
 
         private void SetWorldScale(Transform transform, Vector3 scale)
         {
@@ -272,11 +225,6 @@ namespace Spirare
                 localScale = scale;
             }
             transform.localScale = localScale;
-        }
-
-        private IReadOnlyList<object> SetWorldScale(IReadOnlyList<object> arg)
-        {
-            return SetVector3(arg, SetWorldScale);
         }
     }
 }
