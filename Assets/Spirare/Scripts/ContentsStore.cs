@@ -61,17 +61,20 @@ namespace Spirare
             {
                 return false;
             }
+
+            // resource index is one-based index
+            resourceIndex += 1;
             return true;
         }
 
         public bool TryGetResourceByResourceIndex(int resourceIndex, out Resource resource)
         {
-            if (resourceIndex <= 0 || resourceIndex > Resources.Count - 1)
+            if (resourceIndex <= 0 || resourceIndex > Resources.Count)
             {
                 resource = null;
                 return false;
             }
-            resource = Resources[resourceIndex];
+            resource = Resources[resourceIndex - 1];
             return true;
         }
     }
