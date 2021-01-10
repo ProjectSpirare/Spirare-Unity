@@ -72,22 +72,35 @@ namespace Spirare
         }
     }
 
-    /*
-    private float GetValueForSpecificAxis(Vector3 vector3, Vector3AxisType axis)
+    internal enum QuaternionElementType
     {
-        switch (axis)
+        x,
+        y,
+        z,
+        w
+    }
+
+    internal static class QuaternionExtension
+    {
+        public static float GetSpecificValue(this Quaternion quaternion, QuaternionElementType element)
         {
-            case Vector3AxisType.x:
-                return vector3.x;
-            case Vector3AxisType.y:
-                return vector3.y;
-            case Vector3AxisType.z:
-                return vector3.z;
-            default:
-                return float.NaN;
+            switch (element)
+            {
+                case QuaternionElementType.x:
+                    return quaternion.x;
+                case QuaternionElementType.y:
+                    return quaternion.y;
+                case QuaternionElementType.z:
+                    return quaternion.z;
+                case QuaternionElementType.w:
+                    return quaternion.w;
+                default:
+                    return float.NaN;
+            }
         }
     }
-    */
+
+
     public class ArgumentParser
     {
         private IReadOnlyList<object> arg;
