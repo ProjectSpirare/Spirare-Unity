@@ -147,7 +147,7 @@ namespace Spirare
                 TryReadFloat(out var y) &&
                 TryReadFloat(out var z))
             {
-                vector = new Vector3(x, y, z);
+                vector = CoordinateUtility.ToUnityCoordinate(x, y, z);
                 return true;
             }
 
@@ -162,7 +162,7 @@ namespace Spirare
                 TryReadFloat(out var z) &&
                 TryReadFloat(out var w))
             {
-                quaternion = new Quaternion(x, y, z, w);
+                quaternion = CoordinateUtility.ToUnityCoordinate(x, y, z, w);
                 return true;
             }
 

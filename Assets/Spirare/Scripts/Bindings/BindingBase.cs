@@ -55,19 +55,50 @@ namespace Spirare
 
     internal static class Vector3Extension
     {
-        public static float GetSpecificValue(this Vector3 vector3, Vector3ElementType element)
+        public static float GetSpecificValue(this Vector3 vector3, Vector3ElementType element, bool toSpirareCoorinates = true)
         {
+            var vector = toSpirareCoorinates ? vector3.ToSpirareCoordinate() : vector3;
+
             switch (element)
             {
                 case Vector3ElementType.x:
-                    return vector3.x;
+                    return vector.x;
                 case Vector3ElementType.y:
-                    return vector3.y;
+                    return vector.y;
                 case Vector3ElementType.z:
-                    return vector3.z;
+                    return vector.z;
                 default:
                     return float.NaN;
             }
+        }
+
+        private static Vector3 ToSpirareCoordinate(this Vector3 vector3)
+        {
+            // return new Vector3(vector3.z, -vector3.x, vector3.y);
+            return CoordinateUtility.ToSpirareCoordinate(vector3);
+        }
+    }
+
+    internal static class CoordinateUtility
+    {
+        public static Vector3 ToSpirareCoordinate(Vector3 vector3)
+        {
+            return new Vector3(vector3.z, -vector3.x, vector3.y);
+        }
+
+        public static Vector3 ToUnityCoordinate(float x, float y, float z)
+        {
+            return new Vector3(-y, z, x);
+        }
+
+        public static Quaternion ToSpirareCoordinate(Quaternion rotation)
+        {
+            return new Quaternion(rotation.z, -rotation.x, rotation.y, -rotation.w);
+        }
+
+        public static Quaternion ToUnityCoordinate(float x, float y, float z, float w)
+        {
+            return new Quaternion(-y, z, x, -w);
         }
     }
 
@@ -81,21 +112,26 @@ namespace Spirare
 
     internal static class QuaternionExtension
     {
-        public static float GetSpecificValue(this Quaternion quaternion, QuaternionElementType element)
+        public static float GetSpecificValue(this Quaternion quaternion, QuaternionElementType element, bool toSpirareCoordinate = true)
         {
+            var rotation = toSpirareCoordinate ? quaternion.ToSpirareCoordinate() : quaternion;
             switch (element)
             {
                 case QuaternionElementType.x:
-                    return quaternion.x;
+                    return rotation.x;
                 case QuaternionElementType.y:
-                    return quaternion.y;
+                    return rotation.y;
                 case QuaternionElementType.z:
-                    return quaternion.z;
+                    return rotation.z;
                 case QuaternionElementType.w:
-                    return quaternion.w;
+                    return rotation.w;
                 default:
                     return float.NaN;
             }
+        }
+        private static Quaternion ToSpirareCoordinate(this Quaternion rotation)
+        {
+            return CoordinateUtility.ToSpirareCoordinate(rotation);
         }
     }
 }
