@@ -1,6 +1,5 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using System.Xml;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -8,20 +7,19 @@ namespace Spirare
 {
     public class LoaderForEditor : PomlLoader
     {
-        protected override WasmBehaviour AttatchScript(string path, XmlNode node, Transform parent)
+        protected override WasmBehaviour AttachScript(PomlScriptElement element, Transform parent)
         {
-            var wasm = base.AttatchScript(path, node, parent);
-            if (wasm != null)
+            var wasm = base.AttachScript(element, parent);
+
+            // event trigger
+            var eventTrigger = gameObject.AddComponent<EventTrigger>();
+            var entry = new EventTrigger.Entry()
             {
-                // event trigger
-                var eventTrigger = gameObject.AddComponent<EventTrigger>();
-                var entry = new EventTrigger.Entry()
-                {
-                    eventID = EventTriggerType.PointerDown,
-                };
-                entry.callback.AddListener(_ => wasm.InvokeOnUse());
-                eventTrigger.triggers.Add(entry);
-            }
+                eventID = EventTriggerType.PointerDown,
+            };
+            entry.callback.AddListener(_ => wasm.InvokeOnUse());
+            eventTrigger.triggers.Add(entry);
+
             return wasm;
         }
     }
