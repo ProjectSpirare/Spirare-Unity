@@ -257,6 +257,7 @@ namespace Spirare
         }
     }
 
+    /*
     static class XmlNodeExtensions
     {
         public static bool TryGetAttribute(this XmlNode node, string key, out string value)
@@ -272,4 +273,5 @@ namespace Spirare
             return true;
         }
     }
+    */
 }

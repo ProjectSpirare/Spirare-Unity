@@ -315,7 +315,7 @@ namespace Spirare
         */
     }
 
-    static class XmlNodeExtensions
+    internal static class XmlNodeExtensions
     {
         public static bool TryGetAttribute(this XmlNode node, string key, out string value)
         {
