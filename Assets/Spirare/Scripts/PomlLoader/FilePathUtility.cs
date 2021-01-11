@@ -27,27 +27,10 @@ namespace Spirare
             {
                 if (baseUri.IsFile)
                 {
-                    UnityEngine.Debug.Log("file");
                     return Path.GetFullPath(Path.Combine(basePath, "..", path));
                 }
                 else
                 {
-                    /*
-                    var relative = path.StartsWith(".");
-
-                    if (relative)
-                    {
-                        return CombineUri(baseUri, path);
-                    }
-                    else
-                    {
-                        UnityEngine.Debug.Log(baseUri.Authority);
-                        var rootPath = baseUri.GetLeftPart(UriPartial.Authority);
-                        UnityEngine.Debug.Log(rootPath);
-                        UnityEngine.Debug.Log(path);
-                        return CombineUri(baseUri, path);
-                    }
-                    */
                     return CombineUri(baseUri, path);
                 }
             }
