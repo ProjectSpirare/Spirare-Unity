@@ -15,6 +15,8 @@ namespace Spirare
             var scene = xml.SelectSingleNode("//scene");
             var pomlScene = ParseScene(scene, basePath);
 
+            var resource = xml.SelectSingleNode("//resource");
+            var pomlResource = ParseResource(resource, basePath);
             /*
             var resource = xml.SelectSingleNode("//resource");
             LoadResource(resource);
@@ -22,7 +24,8 @@ namespace Spirare
 
             poml = new Poml()
             {
-                Scene = pomlScene
+                Scene = pomlScene,
+                Resource = pomlResource
             };
             return true;
         }
@@ -58,12 +61,7 @@ namespace Spirare
 
         private PomlScene ParseScene(XmlNode scene, string basePath)
         {
-            var elements = new List<PomlElement>();
-            foreach (XmlNode node in scene.ChildNodes)
-            {
-                var element = ParseElement(node, basePath);
-                elements.Add(element);
-            }
+            var elements = ParseElements(scene, basePath);
 
             var pomlScene = new PomlScene()
             {
@@ -71,6 +69,34 @@ namespace Spirare
             };
             return pomlScene;
         }
+
+        private PomlResource ParseResource(XmlNode resource, string basePath)
+        {
+            var elements = ParseElements(resource, basePath);
+
+            var pomlResource = new PomlResource()
+            {
+                Elements = elements
+            };
+            return pomlResource;
+        }
+
+        private List<PomlElement> ParseElements(XmlNode rootNode, string basePath)
+        {
+            var elements = new List<PomlElement>();
+            if (rootNode == null)
+            {
+                return elements;
+            }
+
+            foreach (XmlNode node in rootNode.ChildNodes)
+            {
+                var element = ParseElement(node, basePath);
+                elements.Add(element);
+            }
+            return elements;
+        }
+
 
         private PomlElementType GetElementType(XmlNode node)
         {
@@ -103,10 +129,10 @@ namespace Spirare
                 childElements.Add(childElement);
             }
 
-
             var pomlElement = InitElement(node, basePath);
 
             // Read common attributes
+            var id = node.GetAttribute("id", null);
             var position = ReadVector3Attribute(node, "position", 0);
             var scale = ReadVector3Attribute(node, "scale", 1);
 
@@ -119,6 +145,7 @@ namespace Spirare
             }
 
             pomlElement.Children = childElements;
+            pomlElement.Id = id;
             pomlElement.Position = position;
             pomlElement.Scale = scale;
             pomlElement.Src = src;
