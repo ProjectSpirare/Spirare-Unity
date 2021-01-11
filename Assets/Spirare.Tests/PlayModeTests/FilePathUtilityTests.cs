@@ -52,7 +52,7 @@ public class FilePathUtilityTests
             path = FilePathUtility.GetAbsolutePath("./path", basePath);
             Assert.AreEqual($"{httpUrl}/path", path);
         }
-        
+
         basePathList = new string[]
         {
             "http://example.com/sub/",
@@ -65,7 +65,7 @@ public class FilePathUtilityTests
             Assert.AreEqual($"{httpUrl}/sub/path", path);
         }
     }
-    
+
     [Test]
     public void GetAbsolutePath_HttpAbsolute()
     {
@@ -86,4 +86,21 @@ public class FilePathUtilityTests
             Assert.AreEqual("http://example.net/path", path);
         }
     }
+
+    [Test]
+    public void GetAbsolutePath_FileRelative()
+    {
+        string path;
+        var basePath = @"C:\foo\bar\foobar.xml";
+
+        path = FilePathUtility.GetAbsolutePath("path", basePath);
+        Assert.AreEqual(@"C:\foo\bar\path", path);
+
+        path = FilePathUtility.GetAbsolutePath("C:\\path", basePath);
+        Assert.AreEqual(@"C:\path", path);
+
+        path = FilePathUtility.GetAbsolutePath("./path", basePath);
+        Assert.AreEqual(@"C:\foo\bar\path", path);
+    }
+
 }

@@ -28,7 +28,7 @@ namespace Spirare
                 if (baseUri.IsFile)
                 {
                     UnityEngine.Debug.Log("file");
-                    return Path.Combine(basePath, "..", path);
+                    return Path.GetFullPath(Path.Combine(basePath, "..", path));
                 }
                 else
                 {
