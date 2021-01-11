@@ -32,21 +32,26 @@ namespace Spirare
         public PomlElementType ElementType;
         public Vector3 Position;
         public Vector3 Scale;
+        public string Src;
         public List<PomlElement> Children = new List<PomlElement>();
-
     }
 
     internal class PomlParser
     {
-        public bool TryParse(XmlDocument xml, string basePath)
+        public bool TryParse(XmlDocument xml, string basePath, out Poml poml)
         {
             var scene = xml.SelectSingleNode("//scene");
-            ParseScene(scene, basePath);
+            var pomlScene = ParseScene(scene, basePath);
 
             /*
             var resource = xml.SelectSingleNode("//resource");
             LoadResource(resource);
             */
+
+            poml = new Poml()
+            {
+                Scene = pomlScene
+            };
             return true;
         }
 
@@ -125,16 +130,19 @@ namespace Spirare
         {
             var elementType = GetElementType(node);
 
-            var position = ReadVector3(node, "position", 0);
-            var scale = ReadVector3(node, "scale", 1);
+            var position = ReadVector3Attribute(node, "position", 0);
+            var scale = ReadVector3Attribute(node, "scale", 1);
 
             // TODO rotation
+
+            var src = node.GetAttribute("src");
+            src = GetAbsolutePath(src, basePath);
 
             // child elements
             var childElements = new List<PomlElement>();
             foreach (XmlNode child in node.ChildNodes)
             {
-                var childElement = ParseElement(node, basePath);
+                var childElement = ParseElement(child, basePath);
                 childElements.Add(childElement);
             }
 
@@ -143,78 +151,34 @@ namespace Spirare
                 ElementType = elementType,
                 Position = position,
                 Scale = scale,
+                Src = src,
                 Children = childElements
             };
             return pomlElement;
         }
-        /*
 
-        protected Transform InstantiateNode(string path, XmlNode node, Transform parent)
+        private string GetAbsolutePath(string path, string basePath)
         {
-            var tag = node.Name.ToLower();
-            Transform t = null;
-            switch (tag)
+            if (!Uri.TryCreate(path, UriKind.RelativeOrAbsolute, out Uri uri))
             {
-                case "primitive":
-                    t = InstantiatePrimitive(node, parent);
-                    break;
-                case "element":
-                    t = InstantiateElement(node, parent);
-                    break;
-                case "model":
-                    t = InstantiateModel(node, parent);
-                    break;
-                case "script":
-                    AttatchScript(path, node, parent);
-                    break;
-                case "#comment":
-                    break;
-                default:
-                    Debug.LogWarning($"Tag:{tag} is invalid");
-                    break;
+                // not a valid URI
+                return path;
             }
-
-            if (t == null)
+            if (uri.IsAbsoluteUri)
             {
-                return null;
+                return path;
             }
-
-            t.SetParent(parent, false);
-
-            t.localPosition = ReadVector3(node, "position", 0);
-            t.localScale = ReadVector3(node, "scale", 1);
-
-            // child elements
-            foreach (XmlNode child in node.ChildNodes)
-            {
-                InstantiateNode(path, child, t);
-            }
-
-            return t;
+            return Path.Combine(basePath, "..", path);
+        }
+        /*
+        private string GetAbsolutePath(string basePath, string relativePath)
+        {
+            var path = Path.Combine(basePath, "..", relativePath);
+            return path;
         }
         */
 
-        /*
-        private string ReadAttribute(XmlNode node, string key, string defaultValue = "")
-        {
-            try
-            {
-                var value = node.Attributes[key];
-                if (value == null)
-                {
-                    return defaultValue;
-                }
-                return value.Value;
-            }
-            catch (Exception e)
-            {
-                Debug.LogWarning(e);
-                return null;
-            }
-        }
-        */
-
-        private float ReadAttribute(XmlNode node, string key, float defaultValue = 0)
+        private float GetFloatAttribute(XmlNode node, string key, float defaultValue = 0)
         {
             var stringValue = node.GetAttribute(key);
             if (float.TryParse(stringValue, out var value))
@@ -224,11 +188,11 @@ namespace Spirare
             return defaultValue;
         }
 
-        private Vector3 ReadVector3(XmlNode node, string key, float defaultValue = 0)
+        private Vector3 ReadVector3Attribute(XmlNode node, string key, float defaultValue = 0)
         {
-            var x = ReadAttribute(node, $"{key}.x", defaultValue);
-            var y = ReadAttribute(node, $"{key}.y", defaultValue);
-            var z = ReadAttribute(node, $"{key}.z", defaultValue);
+            var x = GetFloatAttribute(node, $"{key}.x", defaultValue);
+            var y = GetFloatAttribute(node, $"{key}.y", defaultValue);
+            var z = GetFloatAttribute(node, $"{key}.z", defaultValue);
             return new Vector3(x, y, z);
         }
 
