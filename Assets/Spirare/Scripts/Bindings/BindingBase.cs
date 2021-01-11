@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Text;
 using UnityEngine;
 using Wasm.Interpret;
 
@@ -56,19 +55,26 @@ namespace Spirare
 
     internal static class Vector3Extension
     {
-        public static float GetSpecificValue(this Vector3 vector3, Vector3ElementType element)
+        public static float GetSpecificValue(this Vector3 vector3, Vector3ElementType element, bool toSpirareCoorinates = true)
         {
+            var vector = toSpirareCoorinates ? vector3.ToSpirareCoordinate() : vector3;
+
             switch (element)
             {
                 case Vector3ElementType.x:
-                    return vector3.x;
+                    return vector.x;
                 case Vector3ElementType.y:
-                    return vector3.y;
+                    return vector.y;
                 case Vector3ElementType.z:
-                    return vector3.z;
+                    return vector.z;
                 default:
                     return float.NaN;
             }
+        }
+
+        private static Vector3 ToSpirareCoordinate(this Vector3 vector3)
+        {
+            return CoordinateUtility.ToSpirareCoordinate(vector3);
         }
     }
 
@@ -82,225 +88,26 @@ namespace Spirare
 
     internal static class QuaternionExtension
     {
-        public static float GetSpecificValue(this Quaternion quaternion, QuaternionElementType element)
+        public static float GetSpecificValue(this Quaternion quaternion, QuaternionElementType element, bool toSpirareCoordinate = true)
         {
+            var rotation = toSpirareCoordinate ? quaternion.ToSpirareCoordinate() : quaternion;
             switch (element)
             {
                 case QuaternionElementType.x:
-                    return quaternion.x;
+                    return rotation.x;
                 case QuaternionElementType.y:
-                    return quaternion.y;
+                    return rotation.y;
                 case QuaternionElementType.z:
-                    return quaternion.z;
+                    return rotation.z;
                 case QuaternionElementType.w:
-                    return quaternion.w;
+                    return rotation.w;
                 default:
                     return float.NaN;
             }
         }
-    }
-
-
-    public class ArgumentParser
-    {
-        private IReadOnlyList<object> arg;
-        private ModuleInstance moduleInstance;
-        private int index;
-
-        internal LinearMemory Memory
+        private static Quaternion ToSpirareCoordinate(this Quaternion rotation)
         {
-            get
-            {
-                return moduleInstance.Memories[0];
-            }
-        }
-
-        public ArgumentParser(IReadOnlyList<object> arg, ModuleInstance moduleInstance = null)
-        {
-            this.arg = arg;
-            this.moduleInstance = moduleInstance;
-        }
-
-        public bool TryReadInt(out int value)
-        {
-            if (!TryReadObject(out var valueObject))
-            {
-                value = 0;
-                return false;
-            }
-
-            try
-            {
-                value = (int)valueObject;
-                return true;
-            }
-            catch (Exception e)
-            {
-                value = 0;
-                Debug.LogWarning(e);
-                return false;
-            }
-        }
-
-        public bool TryReadUInt(out uint value)
-        {
-            if (!TryReadObject(out var valueObject))
-            {
-                value = 0;
-                return false;
-            }
-
-            try
-            {
-                var intValue = (int)valueObject;
-                value = InterpretAsUint(intValue);
-                return true;
-            }
-            catch (Exception e)
-            {
-                value = 0;
-                Debug.LogWarning(e);
-                return false;
-            }
-        }
-
-        public bool TryReadLong(out long value)
-        {
-            if (!TryReadObject(out var valueObject))
-            {
-                value = 0;
-                return false;
-            }
-
-            try
-            {
-                value = (long)(int)valueObject;
-                return true;
-            }
-            catch (Exception e)
-            {
-                value = 0;
-                Debug.LogWarning(e);
-                return false;
-            }
-        }
-
-        public bool TryReadFloat(out float value)
-        {
-            if (!TryReadObject(out var valueObject))
-            {
-                value = 0;
-                return false;
-            }
-
-            try
-            {
-                value = (float)valueObject;
-                return true;
-            }
-            catch (Exception e)
-            {
-                value = 0;
-                Debug.LogWarning(e);
-                return false;
-            }
-        }
-
-        public bool TryReadString(out string value)
-        {
-            if (!TryReadInt(out var pointer) || !TryReadInt(out var length))
-            {
-                value = "";
-                return false;
-            }
-
-            var memory = Memory;
-            var data = new byte[length];
-
-            try
-            {
-                for (var i = 0; i < length; i++)
-                {
-                    var index = (uint)(pointer + i);
-                    data[i] = (byte)memory.Int8[index];
-                }
-                value = Encoding.UTF8.GetString(data);
-                return true;
-            }
-            catch (Exception e)
-            {
-                Debug.LogWarning(e);
-                value = "";
-                return false;
-            }
-        }
-
-        public bool TryReadVector3(out Vector3 vector)
-        {
-            if (TryReadFloat(out var x) &&
-                TryReadFloat(out var y) &&
-                TryReadFloat(out var z))
-            {
-                vector = new Vector3(x, y, z);
-                return true;
-            }
-
-            vector = Vector3.zero;
-            return false;
-        }
-
-        public bool TryReadQuaternion(out Quaternion quaternion)
-        {
-            if (TryReadFloat(out var x) &&
-                TryReadFloat(out var y) &&
-                TryReadFloat(out var z) &&
-                TryReadFloat(out var w))
-            {
-                quaternion = new Quaternion(x, y, z, w);
-                return true;
-            }
-
-            quaternion = Quaternion.identity;
-            return false;
-        }
-
-        public static uint InterpretAsUint(int value)
-        {
-            try
-            {
-                var bytes = BitConverter.GetBytes(value);
-                return BitConverter.ToUInt32(bytes, 0);
-            }
-            catch (Exception)
-            {
-                return 0;
-            }
-        }
-
-        public static int InterpretAsInt(uint value)
-        {
-            try
-            {
-                var bytes = BitConverter.GetBytes(value);
-                return BitConverter.ToInt32(bytes, 0);
-            }
-            catch (Exception)
-            {
-                return 0;
-            }
-        }
-
-        private bool TryReadObject(out object value)
-        {
-            if (arg.Count <= index)
-            {
-                value = null;
-                return false;
-            }
-
-            value = arg[index];
-            index += 1;
-            return true;
+            return CoordinateUtility.ToSpirareCoordinate(rotation);
         }
     }
 }

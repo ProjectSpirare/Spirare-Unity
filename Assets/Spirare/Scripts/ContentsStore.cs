@@ -13,15 +13,13 @@ namespace Spirare
     public class Element
     {
         public string Id { set; get; }
+        public int ElementIndex { set; get; }
         public GameObject GameObject { get; internal set; }
     }
 
 
     public class ContentsStore
     {
-        // private int elementIndexCounter = 1;
-
-        // public readonly Dictionary<string, GameObject> Objects = new Dictionary<string, GameObject>();
         public readonly List<Element> Elements = new List<Element>();
 
         public readonly List<Resource> Resources = new List<Resource>();
@@ -31,11 +29,9 @@ namespace Spirare
         public int RegisterElement(Element element)
         {
             Elements.Add(element);
-            // var id = elementIndexCounter;
-            // elementIndexCounter += 1;
-
-            // Objects.Add(id.ToString(), gameObject);
-            return Elements.Count;
+            var elementIndex = Elements.Count;
+            element.ElementIndex = elementIndex;
+            return elementIndex;
         }
 
         public void RegisterResource(Resource resource)
