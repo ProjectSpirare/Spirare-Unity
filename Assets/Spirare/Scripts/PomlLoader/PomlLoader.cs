@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Xml;
 using UnityEngine;
+using static Spirare.PomlElement;
 
 namespace Spirare
 {
@@ -16,6 +15,8 @@ namespace Spirare
         private Transform resourceRoot;
 
         private ContentsStore contentsStore;
+
+        private static readonly PomlParser parser = new PomlParser();
 
         private void Awake()
         {
@@ -37,13 +38,145 @@ namespace Spirare
             var xmlDocument = new XmlDocument();
             xmlDocument.Load(path);
 
+            if (parser.TryParse(xmlDocument, path, out var poml))
+            {
+                LoadScene(poml);
+            }
+            /*
+
             var scene = xmlDocument.SelectSingleNode("//scene");
             LoadScene(scene);
 
             var resource = xmlDocument.SelectSingleNode("//resource");
             LoadResource(resource);
+            */
         }
 
+        private void LoadScene(Poml poml)
+        {
+            foreach (var element in poml.Scene.Elements)
+            {
+                LoadElement(element, transform);
+            }
+        }
+
+        private void LoadElement(PomlElement element, Transform parent)
+        {
+            var t = GenerateElement(element, parent);
+
+            if (t == null)
+            {
+                return;
+            }
+
+            t.SetParent(parent, false);
+
+            t.localPosition = element.Position;
+            t.localScale = element.Scale;
+
+            // Load child elements
+            foreach (var child in element.Children)
+            {
+                LoadElement(child, t);
+            }
+        }
+
+        private Transform GenerateElement(PomlElement element, Transform parent)
+        {
+            switch (element.ElementType)
+            {
+                case PomlElementType.Element:
+                    return InstantiateEmptyElement(element);
+                case PomlElementType.Primitive:
+                    if (element is PomlPrimitiveElement primitiveElement)
+                    {
+                        return InstantiatePrimitive(primitiveElement);
+                    }
+                    return null;
+                case PomlElementType.Model:
+                    return InstantiateModel(element);
+                case PomlElementType.Script:
+                    if (element is PomlScriptElement scriptElement)
+                    {
+                        AttachScript(scriptElement, parent);
+                    }
+                    return null;
+                default:
+                    return null;
+            }
+        }
+
+        protected virtual Transform InstantiateEmptyElement(PomlElement element)
+        {
+            var go = new GameObject();
+            return go.transform;
+        }
+
+        protected virtual Transform InstantiatePrimitive(PomlPrimitiveElement element)
+        {
+            if (TryGetUnityPrimitiveType(element.PrimitiveType, out var unityPrimitiveType))
+            {
+                var go = GameObject.CreatePrimitive(unityPrimitiveType);
+                return go.transform;
+            }
+            Debug.LogWarning($"Primitive type {element.PrimitiveType} is invalid");
+            return null;
+        }
+
+        protected virtual Transform InstantiateModel(PomlElement element)
+        {
+            var go = new GameObject();
+
+            // TODO create load gltf
+            var gltf = go.AddComponent<GltfEntity>();
+            var srcPath = element.Src;
+            gltf.Load(srcPath);
+            return go.transform;
+        }
+
+        protected virtual WasmBehaviour AttachScript(PomlScriptElement element, Transform parent)
+        {
+            var src = element.Src;
+            var args = element.Args;
+
+            var wasm = parent.gameObject.AddComponent<WasmFromUrl>();
+            if (src.StartsWith("http"))
+            {
+                _ = wasm.LoadWasmFromUrl(src, contentsStore, args);
+            }
+            else
+            {
+                wasm.LoadWasm(src, contentsStore, args);
+            }
+            return wasm;
+        }
+
+
+        private bool TryGetUnityPrimitiveType(PomlPrimitiveElement.PomlPrimitiveElementType primitiveType, out PrimitiveType unityPrimitiveType)
+        {
+            unityPrimitiveType = GetUnityPrimitiveType(primitiveType);
+            return Enum.IsDefined(typeof(PrimitiveType), unityPrimitiveType);
+        }
+
+        private PrimitiveType GetUnityPrimitiveType(PomlPrimitiveElement.PomlPrimitiveElementType primitiveType)
+        {
+            switch (primitiveType)
+            {
+                case PomlPrimitiveElement.PomlPrimitiveElementType.Cube:
+                    return PrimitiveType.Cube;
+                case PomlPrimitiveElement.PomlPrimitiveElementType.Sphere:
+                    return PrimitiveType.Sphere;
+                case PomlPrimitiveElement.PomlPrimitiveElementType.Cylinder:
+                    return PrimitiveType.Cylinder;
+                case PomlPrimitiveElement.PomlPrimitiveElementType.Plane:
+                    return PrimitiveType.Quad;
+                case PomlPrimitiveElement.PomlPrimitiveElementType.Capsule:
+                    return PrimitiveType.Capsule;
+                default:
+                    return (PrimitiveType)(-1);
+            }
+        }
+        /*
         private void LoadResource(XmlNode resourceNode)
         {
             Debug.Log("LoadResource");
@@ -67,33 +200,21 @@ namespace Spirare
                     GameObject = t.gameObject
                 };
                 contentsStore.RegisterResource(resource);
-
-                /*
-                if (!string.IsNullOrEmpty(id))
-                {
-                    Debug.Log(id);
-                    // contentsStore.ResourceObjects.Add(id, t.gameObject);
-                    // contentsStore.ResourceObjects.Add(id, t.gameObject);
-                }
-                */
             }
         }
+        */
 
+        /*
         private void LoadScene(XmlNode scene)
         {
             foreach (XmlNode node in scene.ChildNodes)
             {
-                /*
-                Debug.Log(node.ToString());
-                Debug.Log(node.Name);
-                Debug.Log(node.NodeType);
-                */
-
                 InstantiateNode(path, node, transform);
-
             }
         }
+        */
 
+        /*
         protected Transform InstantiateNode(string path, XmlNode node, Transform parent)
         {
             var tag = node.Name.ToLower();
@@ -137,7 +258,9 @@ namespace Spirare
 
             return t;
         }
+        */
 
+        /*
         private string ReadAttribute(XmlNode node, string key, string defaultValue = "")
         {
             try
@@ -173,36 +296,47 @@ namespace Spirare
             var z = ReadAttribute(node, $"{key}.z", defaultValue);
             return new Vector3(x, y, z);
         }
+        */
 
-        protected virtual WasmBehaviour AttatchScript(string path, XmlNode node, Transform parent)
-        {
-            if (!node.TryGetAttribute("src", out var src))
-            {
-                return null;
-            }
 
-            var srcPath = GetAbsolutePath(path, src);
-            Debug.Log(srcPath);
 
-            var args = ReadAttribute(node, "args", "");
-            Debug.Log(args);
 
-            var separator = new char[] { ' ' };
-            var argsList = args.Split(separator, StringSplitOptions.RemoveEmptyEntries)
-                .ToList();
 
-            var wasm = parent.gameObject.AddComponent<WasmFromUrl>();
-            if (srcPath.StartsWith("http"))
-            {
-                _ = wasm.LoadWasmFromUrl(srcPath, contentsStore, argsList);
-            }
-            else
-            {
-                wasm.LoadWasm(srcPath, contentsStore, argsList);
-            }
-            return wasm;
-        }
 
+        /*
+
+                protected virtual WasmBehaviour AttatchScript(string path, XmlNode node, Transform parent)
+                {
+                    if (!node.TryGetAttribute("src", out var src))
+                    {
+                        return null;
+                    }
+
+                    var srcPath = GetAbsolutePath(path, src);
+                    Debug.Log(srcPath);
+
+                    var args = ReadAttribute(node, "args", "");
+                    Debug.Log(args);
+
+                    var separator = new char[] { ' ' };
+                    var argsList = args.Split(separator, StringSplitOptions.RemoveEmptyEntries)
+                        .ToList();
+
+                    var wasm = parent.gameObject.AddComponent<WasmFromUrl>();
+                    if (srcPath.StartsWith("http"))
+                    {
+                        _ = wasm.LoadWasmFromUrl(srcPath, contentsStore, argsList);
+                    }
+                    else
+                    {
+                        wasm.LoadWasm(srcPath, contentsStore, argsList);
+                    }
+                    return wasm;
+                }
+        */
+
+
+        /*
         private Transform InstantiateElement(XmlNode node, Transform parent)
         {
             var go = new GameObject();
@@ -255,23 +389,6 @@ namespace Spirare
             var path = Path.Combine(basePath, "..", relativePath);
             return path;
         }
+        */
     }
-
-    /*
-    static class XmlNodeExtensions
-    {
-        public static bool TryGetAttribute(this XmlNode node, string key, out string value)
-        {
-            var type = node.Attributes[key];
-            if (type == null)
-            {
-                value = null;
-                return false;
-            }
-
-            value = type.Value;
-            return true;
-        }
-    }
-    */
 }
