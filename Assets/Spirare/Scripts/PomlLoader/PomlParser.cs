@@ -135,8 +135,12 @@ namespace Spirare
 
             // TODO rotation
 
-            var src = node.GetAttribute("src");
-            src = GetAbsolutePath(src, basePath);
+            var src = node.GetAttribute("src", null);
+            // src = GetAbsolutePath(src, basePath);
+            if (src != null)
+            {
+                src = FilePathUtility.GetAbsolutePath(src, basePath);
+            }
 
             // child elements
             var childElements = new List<PomlElement>();
@@ -157,6 +161,7 @@ namespace Spirare
             return pomlElement;
         }
 
+        /*
         private string GetAbsolutePath(string path, string basePath)
         {
             if (!Uri.TryCreate(path, UriKind.RelativeOrAbsolute, out Uri uri))
@@ -170,6 +175,7 @@ namespace Spirare
             }
             return Path.Combine(basePath, "..", path);
         }
+        */
         /*
         private string GetAbsolutePath(string basePath, string relativePath)
         {
@@ -279,30 +285,5 @@ namespace Spirare
             return path;
         }
         */
-    }
-
-    internal static class XmlNodeExtensions
-    {
-        public static bool TryGetAttribute(this XmlNode node, string key, out string value)
-        {
-            var type = node.Attributes[key];
-            if (type == null)
-            {
-                value = null;
-                return false;
-            }
-
-            value = type.Value;
-            return true;
-        }
-
-        public static string GetAttribute(this XmlNode node, string key, string defaultValue = "")
-        {
-            if (node.TryGetAttribute(key, out var value))
-            {
-                return value;
-            }
-            return defaultValue;
-        }
     }
 }
