@@ -8,67 +8,6 @@ using static Spirare.PomlElement;
 
 namespace Spirare
 {
-    internal class Poml
-    {
-        public PomlScene Scene;
-    }
-
-    internal class PomlScene
-    {
-        public List<PomlElement> Elements = new List<PomlElement>();
-    }
-
-
-    public class PomlElement
-    {
-        public enum PomlElementType
-        {
-            None = 0,
-            Element,
-            Primitive,
-            Model,
-            Script
-        }
-
-        public PomlElementType ElementType { get; protected set; }
-        public Vector3 Position;
-        public Quaternion Rotation;
-        public Vector3 Scale;
-        public string Src;
-
-        public List<PomlElement> Children = new List<PomlElement>();
-
-        public PomlElement(PomlElementType elementType)
-        {
-            ElementType = elementType;
-        }
-    }
-
-    public class PomlPrimitiveElement : PomlElement
-    {
-        public enum PomlPrimitiveElementType
-        {
-            None = 0,
-            Cube,
-            Sphere,
-            Cylinder,
-            Plane,
-            Capsule
-        }
-
-        public PomlPrimitiveElementType PrimitiveType;
-
-        public PomlPrimitiveElement() : base(PomlElementType.Primitive) { }
-    }
-
-    public class PomlScriptElement : PomlElement
-    {
-        public List<string> Args;
-
-        public PomlScriptElement() : base(PomlElementType.Script) { }
-    }
-
-
     internal class PomlParser
     {
         public bool TryParse(XmlDocument xml, string basePath, out Poml poml)
@@ -183,16 +122,6 @@ namespace Spirare
             pomlElement.Position = position;
             pomlElement.Scale = scale;
             pomlElement.Src = src;
-            /*
-            var pomlElement= new PomlElement()
-            {
-                ElementType = elementType,
-                Position = position,
-                Scale = scale,
-                Src = src,
-                Children = childElements
-            };
-            */
             return pomlElement;
         }
 
@@ -245,7 +174,6 @@ namespace Spirare
         protected PomlElement InitScriptElement(XmlNode node, string basePath)
         {
             var args = node.GetAttribute("args", "");
-            Debug.Log(args);
 
             var separator = new char[] { ' ' };
             var argsList = args.Split(separator, StringSplitOptions.RemoveEmptyEntries)
@@ -274,89 +202,5 @@ namespace Spirare
             var z = ReadFloatAttribute(node, $"{key}.z", defaultValue);
             return new Vector3(x, y, z);
         }
-
-        /*
-        protected virtual WasmBehaviour AttatchScript(string path, XmlNode node, Transform parent)
-        {
-            if (!node.TryGetAttribute("src", out var src))
-            {
-                return null;
-            }
-
-            var srcPath = GetAbsolutePath(path, src);
-            Debug.Log(srcPath);
-
-            var args = ReadAttribute(node, "args", "");
-            Debug.Log(args);
-
-            var separator = new char[] { ' ' };
-            var argsList = args.Split(separator, StringSplitOptions.RemoveEmptyEntries)
-                .ToList();
-
-            var wasm = parent.gameObject.AddComponent<WasmFromUrl>();
-            if (srcPath.StartsWith("http"))
-            {
-                _ = wasm.LoadWasmFromUrl(srcPath, contentsStore, argsList);
-            }
-            else
-            {
-                wasm.LoadWasm(srcPath, contentsStore, argsList);
-            }
-            return wasm;
-        }
-
-        private Transform InstantiateElement(XmlNode node, Transform parent)
-        {
-            var go = new GameObject();
-            return go.transform;
-        }
-
-        private Transform InstantiateModel(XmlNode node, Transform parent)
-        {
-            if (!node.TryGetAttribute("src", out var src))
-            {
-                return InstantiateElement(node, parent);
-            }
-
-            var srcPath = GetAbsolutePath(path, src);
-            Debug.Log(srcPath);
-            var go = new GameObject();
-            var gltf = go.AddComponent<GltfEntity>();
-            gltf.Load(srcPath);
-            return go.transform;
-        }
-
-        protected virtual Transform InstantiatePrimitive(XmlNode node, Transform parent)
-        {
-            var type = node.Attributes["type"];
-            if (type == null)
-            {
-                return null;
-            }
-
-            PrimitiveType primitiveType = PrimitiveType.Cube;
-            switch (type.Value.ToLower())
-            {
-                case "cube":
-                    primitiveType = PrimitiveType.Cube;
-                    break;
-                case "sphere":
-                    primitiveType = PrimitiveType.Sphere;
-                    break;
-                case "cylinder":
-                    primitiveType = PrimitiveType.Cylinder;
-                    break;
-            }
-
-            var go = GameObject.CreatePrimitive(primitiveType);
-            return go.transform;
-        }
-
-        private string GetAbsolutePath(string basePath, string relativePath)
-        {
-            var path = Path.Combine(basePath, "..", relativePath);
-            return path;
-        }
-        */
     }
 }
