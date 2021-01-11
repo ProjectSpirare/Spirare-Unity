@@ -12,7 +12,9 @@ public class PomlParserTest
     private PomlParser parser = new PomlParser();
 
     private void Parse(string xml, string basePath,
-        out Poml poml, out PomlScene scene, out List<PomlElement> elements)
+        out Poml poml,
+        out PomlScene scene, out List<PomlElement> elements,
+        out PomlResource resource, out List<PomlElement> resourceElements)
     {
         var xmlDocument = new XmlDocument();
         xmlDocument.LoadXml(xml);
@@ -22,6 +24,9 @@ public class PomlParserTest
 
         scene = poml.Scene;
         elements = scene.Elements;
+
+        resource = poml.Resource;
+        resourceElements = resource.Elements;
     }
 
     [Test]
@@ -33,7 +38,7 @@ public class PomlParserTest
     <model/>
 </scene>
 ";
-        Parse(xml, "", out var poml, out var scene, out var elements);
+        Parse(xml, "", out var poml, out var scene, out var elements, out _, out _);
         Assert.AreEqual(2, elements.Count);
 
         Assert.AreEqual(PomlElementType.Element, elements[0].ElementType);
@@ -51,7 +56,7 @@ public class PomlParserTest
 </poml>
 ";
 
-        Parse(xml, "", out var poml, out var scene, out var elements);
+        Parse(xml, "", out var poml, out var scene, out var elements, out _, out _);
         Assert.AreEqual(new Vector3(1, -1, 0.1f), elements[0].Position);
     }
 
@@ -71,7 +76,7 @@ public class PomlParserTest
 ";
 
         var baseUrl = "http://example.net";
-        Parse(xml, baseUrl, out var poml, out var scene, out var elements);
+        Parse(xml, baseUrl, out var poml, out var scene, out var elements, out _, out _);
         Assert.AreEqual($"{baseUrl}/test.wasm", elements[0].Src);
         Assert.AreEqual($"{baseUrl}/test.wasm", elements[1].Src);
         Assert.AreEqual($"{baseUrl}/dir/test.wasm", elements[2].Src);
@@ -90,7 +95,7 @@ public class PomlParserTest
 </poml>
 ";
 
-        Parse(xml, "", out var poml, out var scene, out var elements);
+        Parse(xml, "", out var poml, out var scene, out var elements, out _, out _);
         var element = elements[0] as PomlScriptElement;
         Assert.IsNotNull(element);
         Assert.AreEqual(4, element.Args.Count);
@@ -114,7 +119,7 @@ public class PomlParserTest
 </poml>
 ";
 
-        Parse(xml, "", out var poml, out var scene, out var elements);
+        Parse(xml, "", out var poml, out var scene, out var elements, out _, out _);
         var element0 = elements[0] as PomlPrimitiveElement;
         Assert.IsNotNull(element0);
         Assert.AreEqual(PomlPrimitiveElement.PomlPrimitiveElementType.Cube, element0.PrimitiveType);
@@ -122,5 +127,29 @@ public class PomlParserTest
         var element1 = elements[1] as PomlPrimitiveElement;
         Assert.IsNotNull(element1);
         Assert.AreEqual(PomlPrimitiveElement.PomlPrimitiveElementType.Plane, element1.PrimitiveType);
+    }
+
+    [Test]
+    public void TryParse_Resource()
+    {
+        var xml = @"
+<poml>
+    <scene>
+        <primitive type=""cube""/>
+    </scene>
+    <resource>
+        <primitive id=""a"" type=""cube""/>
+        <primitive id=""b"" type=""plane""/>
+    </resource>
+</poml>
+";
+
+        Parse(xml, "", out var poml, out var scene, out var elements, out var resource, out var resourceElements);
+        Assert.AreEqual(2, resourceElements.Count);
+        var resource0 = resourceElements[0];
+        Assert.AreEqual("a", resource0.Id);
+
+        var resource1 = resourceElements[1];
+        Assert.AreEqual("b", resource1.Id);
     }
 }

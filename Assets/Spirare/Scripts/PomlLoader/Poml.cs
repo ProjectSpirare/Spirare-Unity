@@ -8,9 +8,15 @@ namespace Spirare
     internal class Poml
     {
         public PomlScene Scene;
+        public PomlResource Resource;
     }
 
     internal class PomlScene
+    {
+        public List<PomlElement> Elements = new List<PomlElement>();
+    }
+
+    internal class PomlResource
     {
         public List<PomlElement> Elements = new List<PomlElement>();
     }
@@ -27,6 +33,7 @@ namespace Spirare
         }
 
         public PomlElementType ElementType { get; protected set; }
+        public string Id;
         public Vector3 Position;
         public Quaternion Rotation;
         public Vector3 Scale;
