@@ -194,6 +194,7 @@ namespace Spirare
         }
         */
 
+        /*
         private string ReadAttribute(XmlNode node, string key, string defaultValue = "")
         {
             try
@@ -211,10 +212,11 @@ namespace Spirare
                 return null;
             }
         }
+        */
 
         private float ReadAttribute(XmlNode node, string key, float defaultValue = 0)
         {
-            var stringValue = ReadAttribute(node, key, "");
+            var stringValue = node.GetAttribute(key);
             if (float.TryParse(stringValue, out var value))
             {
                 return value;
@@ -328,6 +330,15 @@ namespace Spirare
 
             value = type.Value;
             return true;
+        }
+
+        public static string GetAttribute(this XmlNode node, string key, string defaultValue = "")
+        {
+            if (node.TryGetAttribute(key, out var value))
+            {
+                return value;
+            }
+            return defaultValue;
         }
     }
 }

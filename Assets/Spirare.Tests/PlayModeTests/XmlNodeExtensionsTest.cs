@@ -36,4 +36,20 @@ public class XmlNodeExtensionsTest
         var result = element.TryGetAttribute("non_existent", out var src);
         Assert.IsFalse(result);
     }
+    
+    [Test]
+    public void GetAttribute_ExistentAttribute()
+    {
+        var element = xmlDocument.ChildNodes[0];
+        var src = element.GetAttribute("src");
+        Assert.AreEqual("src.wasm", src);
+    }
+
+    [Test]
+    public void GetAttribute_NonExistentAttribute()
+    {
+        var element = xmlDocument.ChildNodes[0];
+        var src = element.GetAttribute("non_existent", "default.wasm");
+        Assert.AreEqual("default.wasm", src);
+    }
 }
