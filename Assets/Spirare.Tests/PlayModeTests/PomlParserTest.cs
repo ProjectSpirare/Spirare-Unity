@@ -5,37 +5,11 @@ using NUnit.Framework;
 using Spirare;
 using UnityEngine;
 using UnityEngine.TestTools;
+using static Spirare.PomlElement;
 
-public class PomlLoaderTest
+public class PomlParserTest
 {
     private PomlParser parser = new PomlParser();
-    /*
-    private XmlDocument xmlDocument;
-    private PomlScene scene;
-    private List<PomlElement> elements;
-    */
-
-    /*
-    [SetUp]
-    public void SetUp()
-    {
-        var xml = @"
-<poml>
-    <scene>
-        <element position.x=""1"" position.y = ""-1"" position.z=""0.1""/>
-    </scene>
-</poml>
-";
-        xmlDocument = new XmlDocument();
-        xmlDocument.LoadXml(xml);
-
-        var result = parser.TryParse(xmlDocument, "", out var poml);
-        Assert.IsTrue(result);
-
-        scene = poml.Scene;
-        elements = scene.Elements;
-    }
-    */
 
     private void Parse(string xml, string basePath,
         out Poml poml, out PomlScene scene, out List<PomlElement> elements)
@@ -105,4 +79,48 @@ public class PomlLoaderTest
         Assert.AreEqual("http://example.com/test.wasm", elements[4].Src);
     }
 
+    [Test]
+    public void TryParse_ArgsAttribute()
+    {
+        var xml = @"
+<poml>
+    <scene>
+        <script args=""--position -1.0 2.0 3.0""/>
+    </scene>
+</poml>
+";
+
+        Parse(xml, "", out var poml, out var scene, out var elements);
+        var element = elements[0] as PomlScriptElement;
+        Assert.IsNotNull(element);
+        Assert.AreEqual(4, element.Args.Count);
+
+        var args = element.Args;
+        Assert.AreEqual("--position", args[0]);
+        Assert.AreEqual("-1.0", args[1]);
+        Assert.AreEqual("2.0", args[2]);
+        Assert.AreEqual("3.0", args[3]);
+    }
+
+    [Test]
+    public void TryParse_PrimitiveAttribute()
+    {
+        var xml = @"
+<poml>
+    <scene>
+        <primitive type=""cube""/>
+        <primitive type=""plane""/>
+    </scene>
+</poml>
+";
+
+        Parse(xml, "", out var poml, out var scene, out var elements);
+        var element0 = elements[0] as PomlPrimitiveElement;
+        Assert.IsNotNull(element0);
+        Assert.AreEqual(PomlPrimitiveElement.PomlPrimitiveElementType.Cube, element0.PrimitiveType);
+
+        var element1 = elements[1] as PomlPrimitiveElement;
+        Assert.IsNotNull(element1);
+        Assert.AreEqual(PomlPrimitiveElement.PomlPrimitiveElementType.Plane, element1.PrimitiveType);
+    }
 }

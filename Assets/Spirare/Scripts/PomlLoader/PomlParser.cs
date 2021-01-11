@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Xml;
 using UnityEngine;
+using static Spirare.PomlElement;
 
 namespace Spirare
 {
@@ -18,23 +18,56 @@ namespace Spirare
         public List<PomlElement> Elements = new List<PomlElement>();
     }
 
-    internal enum PomlElementType
-    {
-        None = 0,
-        Element,
-        Primitive,
-        Model,
-        Script
-    }
 
-    internal class PomlElement
+    public class PomlElement
     {
-        public PomlElementType ElementType;
+        public enum PomlElementType
+        {
+            None = 0,
+            Element,
+            Primitive,
+            Model,
+            Script
+        }
+
+        public PomlElementType ElementType { get; protected set; }
         public Vector3 Position;
+        public Quaternion Rotation;
         public Vector3 Scale;
         public string Src;
+
         public List<PomlElement> Children = new List<PomlElement>();
+
+        public PomlElement(PomlElementType elementType)
+        {
+            ElementType = elementType;
+        }
     }
+
+    public class PomlPrimitiveElement : PomlElement
+    {
+        public enum PomlPrimitiveElementType
+        {
+            None = 0,
+            Cube,
+            Sphere,
+            Cylinder,
+            Plane,
+            Capsule
+        }
+
+        public PomlPrimitiveElementType PrimitiveType;
+
+        public PomlPrimitiveElement() : base(PomlElementType.Primitive) { }
+    }
+
+    public class PomlScriptElement : PomlElement
+    {
+        public List<string> Args;
+
+        public PomlScriptElement() : base(PomlElementType.Script) { }
+    }
+
 
     internal class PomlParser
     {
@@ -89,10 +122,6 @@ namespace Spirare
             var elements = new List<PomlElement>();
             foreach (XmlNode node in scene.ChildNodes)
             {
-                Debug.Log(node.ToString());
-                Debug.Log(node.Name);
-                Debug.Log(node.NodeType);
-
                 var element = ParseElement(node, basePath);
                 elements.Add(element);
             }
@@ -103,7 +132,6 @@ namespace Spirare
             };
             return pomlScene;
         }
-
 
         private PomlElementType GetElementType(XmlNode node)
         {
@@ -128,20 +156,6 @@ namespace Spirare
 
         protected PomlElement ParseElement(XmlNode node, string basePath)
         {
-            var elementType = GetElementType(node);
-
-            var position = ReadVector3Attribute(node, "position", 0);
-            var scale = ReadVector3Attribute(node, "scale", 1);
-
-            // TODO rotation
-
-            var src = node.GetAttribute("src", null);
-            // src = GetAbsolutePath(src, basePath);
-            if (src != null)
-            {
-                src = FilePathUtility.GetAbsolutePath(src, basePath);
-            }
-
             // child elements
             var childElements = new List<PomlElement>();
             foreach (XmlNode child in node.ChildNodes)
@@ -150,7 +164,27 @@ namespace Spirare
                 childElements.Add(childElement);
             }
 
-            var pomlElement = new PomlElement()
+
+            var pomlElement = InitElement(node, basePath);
+
+            // Read common attributes
+            var position = ReadVector3Attribute(node, "position", 0);
+            var scale = ReadVector3Attribute(node, "scale", 1);
+
+            // TODO rotation
+
+            var src = node.GetAttribute("src", null);
+            if (src != null)
+            {
+                src = FilePathUtility.GetAbsolutePath(src, basePath);
+            }
+
+            pomlElement.Children = childElements;
+            pomlElement.Position = position;
+            pomlElement.Scale = scale;
+            pomlElement.Src = src;
+            /*
+            var pomlElement= new PomlElement()
             {
                 ElementType = elementType,
                 Position = position,
@@ -158,33 +192,72 @@ namespace Spirare
                 Src = src,
                 Children = childElements
             };
+            */
             return pomlElement;
         }
 
-        /*
-        private string GetAbsolutePath(string path, string basePath)
+        protected PomlElement InitElement(XmlNode node, string basePath)
         {
-            if (!Uri.TryCreate(path, UriKind.RelativeOrAbsolute, out Uri uri))
+            var elementType = GetElementType(node);
+            switch (elementType)
             {
-                // not a valid URI
-                return path;
+                case PomlElementType.Primitive:
+                    return InitPrimitiveElement(node, basePath);
+                case PomlElementType.Script:
+                    return InitScriptElement(node, basePath);
+                default:
+                    var pomlElement = new PomlElement(elementType);
+                    return pomlElement;
             }
-            if (uri.IsAbsoluteUri)
-            {
-                return path;
-            }
-            return Path.Combine(basePath, "..", path);
         }
-        */
-        /*
-        private string GetAbsolutePath(string basePath, string relativePath)
-        {
-            var path = Path.Combine(basePath, "..", relativePath);
-            return path;
-        }
-        */
 
-        private float GetFloatAttribute(XmlNode node, string key, float defaultValue = 0)
+        protected PomlPrimitiveElement.PomlPrimitiveElementType ConvertToPrimitiveElementType(string type)
+        {
+            switch (type.ToLower())
+            {
+                case "cube":
+                    return PomlPrimitiveElement.PomlPrimitiveElementType.Cube;
+                case "sphere":
+                    return PomlPrimitiveElement.PomlPrimitiveElementType.Sphere;
+                case "cylinder":
+                    return PomlPrimitiveElement.PomlPrimitiveElementType.Cylinder;
+                case "plane":
+                    return PomlPrimitiveElement.PomlPrimitiveElementType.Plane;
+                case "capsule":
+                    return PomlPrimitiveElement.PomlPrimitiveElementType.Capsule;
+                default:
+                    return PomlPrimitiveElement.PomlPrimitiveElementType.None;
+            }
+        }
+
+        protected PomlElement InitPrimitiveElement(XmlNode node, string basePath)
+        {
+            var primitiveTypeString = node.GetAttribute("type", "");
+            var primitiveType = ConvertToPrimitiveElementType(primitiveTypeString);
+
+            return new PomlPrimitiveElement()
+            {
+                PrimitiveType = primitiveType
+            };
+        }
+
+
+        protected PomlElement InitScriptElement(XmlNode node, string basePath)
+        {
+            var args = node.GetAttribute("args", "");
+            Debug.Log(args);
+
+            var separator = new char[] { ' ' };
+            var argsList = args.Split(separator, StringSplitOptions.RemoveEmptyEntries)
+                .ToList();
+
+            return new PomlScriptElement()
+            {
+                Args = argsList
+            };
+        }
+
+        private float ReadFloatAttribute(XmlNode node, string key, float defaultValue = 0)
         {
             var stringValue = node.GetAttribute(key);
             if (float.TryParse(stringValue, out var value))
@@ -196,9 +269,9 @@ namespace Spirare
 
         private Vector3 ReadVector3Attribute(XmlNode node, string key, float defaultValue = 0)
         {
-            var x = GetFloatAttribute(node, $"{key}.x", defaultValue);
-            var y = GetFloatAttribute(node, $"{key}.y", defaultValue);
-            var z = GetFloatAttribute(node, $"{key}.z", defaultValue);
+            var x = ReadFloatAttribute(node, $"{key}.x", defaultValue);
+            var y = ReadFloatAttribute(node, $"{key}.y", defaultValue);
+            var z = ReadFloatAttribute(node, $"{key}.z", defaultValue);
             return new Vector3(x, y, z);
         }
 
