@@ -16,10 +16,7 @@ public class PomlParserTest
         out PomlScene scene, out List<PomlElement> elements,
         out PomlResource resource, out List<PomlElement> resourceElements)
     {
-        var xmlDocument = new XmlDocument();
-        xmlDocument.LoadXml(xml);
-
-        var result = parser.TryParse(xmlDocument, basePath, out poml);
+        var result = parser.TryParse(xml, basePath, out poml);
         Assert.IsTrue(result);
 
         scene = poml.Scene;
@@ -37,12 +34,17 @@ public class PomlParserTest
     <element/>
     <model/>
 </scene>
+<resource>
+    <element/>
+</resource>
 ";
-        Parse(xml, "", out var poml, out var scene, out var elements, out _, out _);
+        Parse(xml, "", out var poml, out var scene, out var elements, out _, out var resourceElements);
         Assert.AreEqual(2, elements.Count);
 
         Assert.AreEqual(PomlElementType.Element, elements[0].ElementType);
         Assert.AreEqual(PomlElementType.Model, elements[1].ElementType);
+
+        Assert.AreEqual(1, resourceElements.Count);
     }
 
     [Test]
@@ -51,14 +53,55 @@ public class PomlParserTest
         var xml = @"
 <poml>
     <scene>
-        <element position.x=""1"" position.y = ""-1"" position.z=""0.1""/>
+        <element position=""1 -2 0.1""/>
+        <element position=""1, -2, 0.1""/>
     </scene>
 </poml>
 ";
 
         Parse(xml, "", out var poml, out var scene, out var elements, out _, out _);
-        Assert.AreEqual(new Vector3(1, -1, 0.1f), elements[0].Position);
+        Assert.AreEqual(new Vector3(2, 0.1f, 1f), elements[0].Position);
+        Assert.AreEqual(new Vector3(2, 0.1f, 1f), elements[1].Position);
     }
+
+    [Test]
+    public void TryParse_ScaleAttribute()
+    {
+        var xml = @"
+<poml>
+    <scene>
+        <element/>
+        <element scale=""1 2 0.1""/>
+        <element scale=""1, 2, 0.1""/>
+    </scene>
+</poml>
+";
+
+        Parse(xml, "", out var poml, out var scene, out var elements, out _, out _);
+        Assert.AreEqual(new Vector3(1, 1, 1), elements[0].Scale);
+        Assert.AreEqual(new Vector3(2, 0.1f, 1f), elements[1].Scale);
+        Assert.AreEqual(new Vector3(2, 0.1f, 1f), elements[2].Scale);
+    }
+
+    [Test]
+    public void TryParse_RotationAttribute()
+    {
+        var xml = @"
+<poml>
+    <scene>
+        <element/>
+        <element rotation=""0 0 0 1""/>
+        <element rotation=""0, 0, 0, 1""/>
+    </scene>
+</poml>
+";
+
+        Parse(xml, "", out var poml, out var scene, out var elements, out _, out _);
+        Assert.AreEqual(new Quaternion(0, 0, 0, 1), elements[0].Rotation);
+        Assert.AreEqual(new Quaternion(0, 0, 0, -1), elements[1].Rotation);
+        Assert.AreEqual(new Quaternion(0, 0, 0, -1), elements[2].Rotation);
+    }
+
 
     [Test]
     public void TryParse_SrcAttribute()

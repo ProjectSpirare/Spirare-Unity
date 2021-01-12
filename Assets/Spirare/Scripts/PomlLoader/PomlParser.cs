@@ -10,17 +10,18 @@ namespace Spirare
 {
     internal class PomlParser
     {
-        public bool TryParse(XmlDocument xml, string basePath, out Poml poml)
+        public bool TryParse(string xml, string basePath, out Poml poml)
         {
-            var scene = xml.SelectSingleNode("//scene");
+            var parseXml = $"<root>{xml}</root>";
+
+            var xmlDocument = new XmlDocument();
+            xmlDocument.LoadXml(parseXml);
+
+            var scene = xmlDocument.SelectSingleNode("//scene");
             var pomlScene = ParseScene(scene, basePath);
 
-            var resource = xml.SelectSingleNode("//resource");
+            var resource = xmlDocument.SelectSingleNode("//resource");
             var pomlResource = ParseResource(resource, basePath);
-            /*
-            var resource = xml.SelectSingleNode("//resource");
-            LoadResource(resource);
-            */
 
             poml = new Poml()
             {
@@ -29,35 +30,6 @@ namespace Spirare
             };
             return true;
         }
-
-        /*
-        private void LoadResource(XmlNode resourceNode)
-        {
-            Debug.Log("LoadResource");
-            if (resourceNode == null)
-            {
-                return;
-            }
-            foreach (XmlNode node in resourceNode.ChildNodes)
-            {
-                var t = InstantiateNode(path, node, resourceRoot);
-                if (t == null)
-                {
-                    continue;
-                }
-
-                var id = ReadAttribute(node, "id", null);
-
-                var resource = new Resource()
-                {
-                    Id = id,
-                    GameObject = t.gameObject
-                };
-                contentsStore.RegisterResource(resource);
-
-            }
-        }
-*/
 
         private PomlScene ParseScene(XmlNode scene, string basePath)
         {
@@ -133,10 +105,10 @@ namespace Spirare
 
             // Read common attributes
             var id = node.GetAttribute("id", null);
-            var position = ReadVector3Attribute(node, "position", 0);
-            var scale = ReadVector3Attribute(node, "scale", 1);
+            var position = ReadVector3Attribute(node, "position", 0, directional: true);
+            var scale = ReadVector3Attribute(node, "scale", 1, directional: false);
 
-            // TODO rotation
+            var rotation = ReadRotationAttribute(node);
 
             var src = node.GetAttribute("src", null);
             if (src != null)
@@ -148,9 +120,33 @@ namespace Spirare
             pomlElement.Id = id;
             pomlElement.Position = position;
             pomlElement.Scale = scale;
+            pomlElement.Rotation = rotation;
             pomlElement.Src = src;
             return pomlElement;
         }
+
+        private Quaternion ReadRotationAttribute(XmlNode node)
+        {
+            if (node.TryGetAttribute("rotation", out var attribute))
+            {
+                var values = ReadFloatArray(attribute);
+                if (values.Count < 4)
+                {
+                    return Quaternion.identity;
+                }
+
+                var x = values[0];
+                var y = values[1];
+                var z = values[2];
+                var w = values[3];
+                var rotation = CoordinateUtility.ToUnityCoordinate(x, y, z, w);
+                rotation.Normalize();
+                return rotation;
+            }
+
+            return Quaternion.identity;
+        }
+
 
         protected PomlElement InitElement(XmlNode node, string basePath)
         {
@@ -197,7 +193,6 @@ namespace Spirare
             };
         }
 
-
         protected PomlElement InitScriptElement(XmlNode node, string basePath)
         {
             var args = node.GetAttribute("args", "");
@@ -222,12 +217,45 @@ namespace Spirare
             return defaultValue;
         }
 
-        private Vector3 ReadVector3Attribute(XmlNode node, string key, float defaultValue = 0)
+        private Vector3 ReadVector3Attribute(XmlNode node, string key, float defaultValue, bool directional = true)
         {
-            var x = ReadFloatAttribute(node, $"{key}.x", defaultValue);
-            var y = ReadFloatAttribute(node, $"{key}.y", defaultValue);
-            var z = ReadFloatAttribute(node, $"{key}.z", defaultValue);
-            return new Vector3(x, y, z);
+            if (!node.TryGetAttribute(key, out var attribute))
+            {
+                return new Vector3(defaultValue, defaultValue, defaultValue);
+            }
+
+            var values = ReadFloatArray(attribute);
+            var x = GetValueByIndex(values, 0, defaultValue);
+            var y = GetValueByIndex(values, 1, defaultValue);
+            var z = GetValueByIndex(values, 2, defaultValue);
+            var vector = CoordinateUtility.ToUnityCoordinate(x, y, z, directional);
+            return vector;
+        }
+
+
+        private static List<float> ReadFloatArray(string text)
+        {
+            var values = new List<float>();
+            var separator = new char[] { ',', ' ' };
+            var tokens = text.Split(separator, StringSplitOptions.RemoveEmptyEntries);
+            foreach (var token in tokens)
+            {
+                if (!float.TryParse(token, out var value))
+                {
+                    break;
+                }
+                values.Add(value);
+            }
+            return values;
+        }
+
+        private static float GetValueByIndex(List<float> list, int index, float defaultValue)
+        {
+            if (list.Count > index)
+            {
+                return list[index];
+            }
+            return defaultValue;
         }
     }
 }

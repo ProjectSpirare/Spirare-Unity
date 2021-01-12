@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Xml;
+using System.IO;
 using UnityEngine;
 using static Spirare.PomlElement;
 
@@ -30,20 +30,25 @@ namespace Spirare
             // resourceObject.SetActive(false);
             resourceRoot = resourceObject.transform;
             resourceRoot.SetParent(transform, false);
-            LoadFromFile(path);
+            LoadFile(path);
         }
 
-        public void LoadFromFile(string path)
+        public void LoadFile(string path)
         {
-            var xmlDocument = new XmlDocument();
-            xmlDocument.Load(path);
-
-            LoadPoml(xmlDocument);
+            try
+            {
+                var xml = File.ReadAllText(path);
+                LoadXml(xml);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(e);
+            }
         }
 
-        protected void LoadPoml(XmlDocument xmlDocument)
+        public void LoadXml(string xml)
         {
-            if (parser.TryParse(xmlDocument, path, out var poml))
+            if (parser.TryParse(xml, path, out var poml))
             {
                 LoadScene(poml.Scene);
                 LoadResource(poml.Resource);
@@ -62,7 +67,7 @@ namespace Spirare
         {
             foreach (var element in pomlResource.Elements)
             {
-                var t = LoadElement(element, transform);
+                var t = LoadElement(element, resourceRoot);
                 if (t == null)
                 {
                     continue;
@@ -89,6 +94,7 @@ namespace Spirare
             t.SetParent(parent, false);
 
             t.localPosition = element.Position;
+            t.localRotation = element.Rotation;
             t.localScale = element.Scale;
 
             // Load child elements
