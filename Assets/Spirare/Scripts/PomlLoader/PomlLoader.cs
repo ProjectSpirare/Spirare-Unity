@@ -38,35 +38,52 @@ namespace Spirare
             var xmlDocument = new XmlDocument();
             xmlDocument.Load(path);
 
-            if (parser.TryParse(xmlDocument, path, out var poml))
-            {
-                LoadScene(poml);
-            }
-            /*
-
-            var scene = xmlDocument.SelectSingleNode("//scene");
-            LoadScene(scene);
-
-            var resource = xmlDocument.SelectSingleNode("//resource");
-            LoadResource(resource);
-            */
+            LoadPoml(xmlDocument);
         }
 
-        private void LoadScene(Poml poml)
+        protected void LoadPoml(XmlDocument xmlDocument)
         {
-            foreach (var element in poml.Scene.Elements)
+            if (parser.TryParse(xmlDocument, path, out var poml))
+            {
+                LoadScene(poml.Scene);
+                LoadResource(poml.Resource);
+            }
+        }
+
+        protected void LoadScene(PomlScene scene)
+        {
+            foreach (var element in scene.Elements)
             {
                 LoadElement(element, transform);
             }
         }
 
-        private void LoadElement(PomlElement element, Transform parent)
+        protected void LoadResource(PomlResource pomlResource)
+        {
+            foreach (var element in pomlResource.Elements)
+            {
+                var t = LoadElement(element, transform);
+                if (t == null)
+                {
+                    continue;
+                }
+
+                var resource = new Resource()
+                {
+                    Id = element.Id,
+                    GameObject = t.gameObject
+                };
+                contentsStore.RegisterResource(resource);
+            }
+        }
+
+        private Transform LoadElement(PomlElement element, Transform parent)
         {
             var t = GenerateElement(element, parent);
 
             if (t == null)
             {
-                return;
+                return null;
             }
 
             t.SetParent(parent, false);
@@ -79,6 +96,8 @@ namespace Spirare
             {
                 LoadElement(child, t);
             }
+
+            return t;
         }
 
         private Transform GenerateElement(PomlElement element, Transform parent)

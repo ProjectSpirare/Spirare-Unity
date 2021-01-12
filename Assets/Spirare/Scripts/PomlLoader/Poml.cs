@@ -5,18 +5,18 @@ using UnityEngine;
 
 namespace Spirare
 {
-    internal class Poml
+    public class Poml
     {
         public PomlScene Scene;
         public PomlResource Resource;
     }
 
-    internal class PomlScene
+    public class PomlScene
     {
         public List<PomlElement> Elements = new List<PomlElement>();
     }
 
-    internal class PomlResource
+    public class PomlResource
     {
         public List<PomlElement> Elements = new List<PomlElement>();
     }
