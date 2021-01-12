@@ -7,14 +7,28 @@ namespace Spirare
 {
     internal static class CoordinateUtility
     {
-        public static Vector3 ToSpirareCoordinate(Vector3 vector3)
+        public static Vector3 ToSpirareCoordinate(Vector3 vector3, bool directional = true)
         {
-            return new Vector3(vector3.z, -vector3.x, vector3.y);
+            if (directional)
+            {
+                return new Vector3(vector3.z, -vector3.x, vector3.y);
+            }
+            else
+            {
+                return new Vector3(vector3.z, vector3.x, vector3.y);
+            }
         }
 
-        public static Vector3 ToUnityCoordinate(float x, float y, float z)
+        public static Vector3 ToUnityCoordinate(float x, float y, float z, bool directional = true)
         {
-            return new Vector3(-y, z, x);
+            if (directional)
+            {
+                return new Vector3(-y, z, x);
+            }
+            else
+            {
+                return new Vector3(y, z, x);
+            }
         }
 
         public static Quaternion ToSpirareCoordinate(Quaternion rotation)
