@@ -2,6 +2,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Net.Http;
+using System.Threading.Tasks;
 using UnityEngine;
 using static Spirare.PomlElement;
 
@@ -17,6 +19,7 @@ namespace Spirare
         private ContentsStore contentsStore;
 
         private static readonly PomlParser parser = new PomlParser();
+        private readonly HttpClient httpClient = new HttpClient();
 
         private void Awake()
         {
@@ -30,28 +33,53 @@ namespace Spirare
             // resourceObject.SetActive(false);
             resourceRoot = resourceObject.transform;
             resourceRoot.SetParent(transform, false);
-            LoadFile(path);
+            _ = LoadAsync(path);
         }
 
-        public void LoadFile(string path)
+        public async Task<bool> LoadAsync(string uri)
         {
-            try
-            {
-                var xml = File.ReadAllText(path);
-                LoadXml(xml);
-            }
-            catch (Exception e)
-            {
-                Debug.LogError(e);
-            }
+            var xml = await GetContentAsync(uri);
+            var result = LoadXml(xml);
+            return result;
         }
 
-        public void LoadXml(string xml)
+        public bool LoadXml(string xml)
         {
             if (parser.TryParse(xml, path, out var poml))
             {
                 LoadScene(poml.Scene);
                 LoadResource(poml.Resource);
+                return true;
+            }
+
+            return false;
+        }
+
+        private async Task<string> GetContentAsync(string uriString)
+        {
+            try
+            {
+                var uri = new Uri(uriString);
+                if (uri.IsFile)
+                {
+                    var text = File.ReadAllText(uriString);
+                    return text;
+                }
+                else
+                {
+                    var response = await httpClient.GetAsync(uri);
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        return null;
+                    }
+                    var text = await response.Content.ReadAsStringAsync();
+                    return text;
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(e);
+                return null;
             }
         }
 
