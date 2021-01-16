@@ -5,7 +5,7 @@
 ### Using Git
 Edit `manifest.json` as follows.
 
-```json
+```
 {
   "scopedRegistries": [
     {
@@ -16,7 +16,7 @@ Edit `manifest.json` as follows.
         "com.openupm"
       ]
     }
-  ]
+  ],
   "dependencies": {
     "com.atteneder.gltfast": "2.5.0",
     "com.tarukosu.spirare": "https://github.com/ProjectSpirare/Spirare-Unity.git?path=Assets/Spirare",
