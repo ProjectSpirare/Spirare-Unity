@@ -1,0 +1,17 @@
+{
+  "name": "com.tarukosu.spirare.examples",
+  "version": "0.1.0",
+  "displayName": "Spirare Examples",
+  "description": "",
+  "unity": "2018.4",
+  "author": {
+    "name": "@tarukosu (Yusuke Furuta)"
+  },
+  "samples": [
+    {
+      "displayName": "Sample",
+      "description": "Spirare sample scene",
+      "path": "Samples~/Sample"
+    }
+  ]
+}
