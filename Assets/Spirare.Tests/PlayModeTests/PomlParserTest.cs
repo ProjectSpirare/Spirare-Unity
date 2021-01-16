@@ -151,13 +151,13 @@ public class PomlParserTest
     }
 
     [Test]
-    public void TryParse_PrimitiveAttribute()
+    public void TryParse_PrimitiveShape()
     {
         var xml = @"
 <poml>
     <scene>
-        <primitive type=""cube""/>
-        <primitive type=""plane""/>
+        <primitive shape=""cube""/>
+        <primitive shape=""plane""/>
     </scene>
 </poml>
 ";
@@ -171,6 +171,28 @@ public class PomlParserTest
         Assert.IsNotNull(element1);
         Assert.AreEqual(PomlPrimitiveElement.PomlPrimitiveElementType.Plane, element1.PrimitiveType);
     }
+
+    [Test]
+    public void TryParse_Attribute()
+    {
+        var xml = @"
+<poml>
+    <scene>
+        <element />
+        <element attribute=""static""/>
+        <element attribute=""equipable""/>
+        <element attribute=""static equipable""/>
+    </scene>
+</poml>
+";
+
+        Parse(xml, "", out var poml, out var scene, out var elements, out _, out _);
+        Assert.AreEqual(ElementAttributeType.None, elements[0].Attribute);
+        Assert.AreEqual(ElementAttributeType.Static, elements[1].Attribute);
+        Assert.AreEqual(ElementAttributeType.Equipable, elements[2].Attribute);
+        Assert.AreEqual(ElementAttributeType.Static | ElementAttributeType.Equipable, elements[3].Attribute);
+    }
+
 
     [Test]
     public void TryParse_Resource()

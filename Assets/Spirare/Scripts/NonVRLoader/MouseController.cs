@@ -102,9 +102,13 @@ namespace Spirare
             {
                 return;
             }
+            var pomlElement = wasm.GetComponent<PomlElementComponent>();
 
-            equipment = wasm;
-            equipment.InvokeEvent(WasmEventType.Equip);
+            if (pomlElement.Equipable)
+            {
+                equipment = wasm;
+                equipment.InvokeEvent(WasmEventType.Equip);
+            }
         }
 
         private void Select(Vector3 mousePosition)
