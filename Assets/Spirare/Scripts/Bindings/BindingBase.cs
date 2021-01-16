@@ -55,9 +55,11 @@ namespace Spirare
 
     internal static class Vector3Extension
     {
-        public static float GetSpecificValue(this Vector3 vector3, Vector3ElementType element, bool toSpirareCoorinates = true)
+        public static float GetSpecificValue(this Vector3 vector3, Vector3ElementType element,
+            bool toSpirareCoorinates = true,
+            bool directional = true)
         {
-            var vector = toSpirareCoorinates ? vector3.ToSpirareCoordinate() : vector3;
+            var vector = toSpirareCoorinates ? vector3.ToSpirareCoordinate(directional) : vector3;
 
             switch (element)
             {
@@ -72,9 +74,9 @@ namespace Spirare
             }
         }
 
-        private static Vector3 ToSpirareCoordinate(this Vector3 vector3)
+        private static Vector3 ToSpirareCoordinate(this Vector3 vector3, bool directional = true)
         {
-            return CoordinateUtility.ToSpirareCoordinate(vector3);
+            return CoordinateUtility.ToSpirareCoordinate(vector3, directional);
         }
     }
 
