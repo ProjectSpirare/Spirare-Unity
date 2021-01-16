@@ -96,3 +96,6 @@ Nuget.config*
 
 /Assets/WSATestCertificate.pfx
 /Assets/WSATestCertificate.pfx.meta
+
+/Assets/Spirare.Examples/Samples
+/Assets/Spirare.Examples/Samples.meta
