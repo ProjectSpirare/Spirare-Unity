@@ -2,22 +2,16 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Spirare
+namespace Spirare.Examples
 {
     public class MouseController : MonoBehaviour
     {
         [SerializeField]
         private Transform equipmentOrigin;
 
-        [SerializeField]
-        private float cameraRotationSpeed = 0.1f;
-
         private Camera mainCamera;
 
         private WasmBehaviour equipment = null;
-
-        private Vector3 startMousePosition;
-        private Vector3 startCameraAngles;
 
         private bool Equipping => equipment != null;
 
@@ -32,7 +26,7 @@ namespace Spirare
 
         void Update()
         {
-            RotateCamera();
+            //RotateCamera();
 
             var leftClick = Input.GetMouseButtonDown(0);
             var middleClick = Input.GetMouseButtonDown(2);
@@ -65,26 +59,7 @@ namespace Spirare
                 }
             }
         }
-
-        private void RotateCamera()
-        {
-            // right click
-            var button = 1;
-            if (Input.GetMouseButtonDown(button))
-            {
-                startMousePosition = Input.mousePosition;
-                startCameraAngles = mainCamera.transform.eulerAngles;
-            }
-
-            if (Input.GetMouseButton(button))
-            {
-                var delta = Input.mousePosition - startMousePosition;
-                var x = startCameraAngles.x - cameraRotationSpeed * delta.y;
-                var y = startCameraAngles.y + cameraRotationSpeed * delta.x;
-                mainCamera.transform.eulerAngles = new Vector3(x, y, startCameraAngles.z);
-            }
-        }
-
+        
         private void UpdateEquipmentTransform()
         {
             if (!Equipping)
