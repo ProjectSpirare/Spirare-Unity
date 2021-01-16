@@ -47,15 +47,11 @@ namespace Spirare
                 return InvalidResourceIndex;
             }
 
-            Debug.Log("GetResourceIndex");
-            Debug.Log(id);
-
             if (!store.TryGetResourceIndexById(id, out var resourceIndex))
             {
                 return InvalidResourceIndex;
             }
 
-            Debug.Log(resourceIndex);
             return ReturnValue.FromObject(resourceIndex);
         }
 
@@ -82,7 +78,6 @@ namespace Spirare
             };
             var elementIndex = store.RegisterElement(element);
             go.name = $"{resource.Id}, {elementIndex}";
-            Debug.Log($"Spawn Object, ElementIndex: {elementIndex}");
             return ReturnValue.FromObject(elementIndex);
         }
     }
