@@ -8,9 +8,6 @@ namespace Spirare.Examples
 {
     public class LoadPomlUI : MonoBehaviour
     {
-        //[SerializeField]
-        //WasmFromUrl wasmFromUrl = null;
-
         [SerializeField]
         private Button button = null;
 
@@ -23,7 +20,6 @@ namespace Spirare.Examples
             {
                 var url = inputField.text;
                 _ = Load(url);
-                //_ = wasmFromUrl.LoadWasmFromUrl(url);
             });
         }
 
