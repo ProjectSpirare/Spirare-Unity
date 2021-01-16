@@ -141,13 +141,13 @@ namespace Spirare
             }
         }
 
-        public bool TryReadVector3(out Vector3 vector)
+        public bool TryReadVector3(out Vector3 vector, bool directional = true)
         {
             if (TryReadFloat(out var x) &&
                 TryReadFloat(out var y) &&
                 TryReadFloat(out var z))
             {
-                vector = CoordinateUtility.ToUnityCoordinate(x, y, z);
+                vector = CoordinateUtility.ToUnityCoordinate(x, y, z, directional);
                 return true;
             }
 

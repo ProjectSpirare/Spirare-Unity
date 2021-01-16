@@ -144,7 +144,7 @@ namespace Spirare
             return ReturnValue.FromObject(value);
         }
 
-        private IReadOnlyList<object> SetVector3(IReadOnlyList<object> arg, Action<Transform, Vector3> action)
+        private IReadOnlyList<object> SetVector3(IReadOnlyList<object> arg, Action<Transform, Vector3> action, bool directional = true)
         {
             var parser = new ArgumentParser(arg);
             if (!TryGetElementWithArg(parser, store, out var element))
@@ -152,7 +152,7 @@ namespace Spirare
                 return ReturnValue.Unit;
             }
 
-            if (!parser.TryReadVector3(out var position))
+            if (!parser.TryReadVector3(out var position, directional))
             {
                 return ReturnValue.Unit;
             }
@@ -199,12 +199,12 @@ namespace Spirare
 
         private IReadOnlyList<object> SetLocalScale(IReadOnlyList<object> arg)
         {
-            return SetVector3(arg, (t, v) => t.localScale = v);
+            return SetVector3(arg, (t, v) => t.localScale = v, directional: false);
         }
 
         private IReadOnlyList<object> SetWorldScale(IReadOnlyList<object> arg)
         {
-            return SetVector3(arg, SetWorldScale);
+            return SetVector3(arg, SetWorldScale, directional: false);
         }
 
         private void SetWorldScale(Transform transform, Vector3 scale)
