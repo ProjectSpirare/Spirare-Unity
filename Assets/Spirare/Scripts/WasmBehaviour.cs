@@ -7,13 +7,23 @@ using Wasm.Interpret;
 
 namespace Spirare
 {
+    public enum WasmEventType
+    {
+        Select = 0,
+        Equip,
+        Unequip,
+        Use,
+    }
+
     public class WasmBehaviour : MonoBehaviour
     {
         private ModuleInstance module;
         private FunctionDefinition startFunction;
         private FunctionDefinition updateFunction;
-        private FunctionDefinition onTouchStartFunction;
+        private FunctionDefinition onEquipFunction;
+        private FunctionDefinition onUnequipFunction;
         private FunctionDefinition onUseFunction;
+        private FunctionDefinition onSelectFunction;
 
         protected virtual void Start()
         {
@@ -25,9 +35,25 @@ namespace Spirare
             updateFunction?.Invoke(ReturnValue.Unit);
         }
 
-        public void InvokeOnUse()
+        public void InvokeEvent(WasmEventType eventType)
         {
-            onUseFunction?.Invoke(new object[0]);
+            switch (eventType)
+            {
+                case WasmEventType.Select:
+                    InvokeOnSelect();
+                    break;
+                case WasmEventType.Equip:
+                    InvokeOnEquip();
+                    break;
+                case WasmEventType.Unequip:
+                    InvokeOnUnequip();
+                    break;
+                case WasmEventType.Use:
+                    InvokeOnUse();
+                    break;
+                default:
+                    break;
+            }
         }
 
         public void LoadWasm(string path, ContentsStore store = null, List<string> args = null)
@@ -120,8 +146,32 @@ namespace Spirare
             var exportedFunctions = module.ExportedFunctions;
             exportedFunctions.TryGetValue("start", out startFunction);
             exportedFunctions.TryGetValue("update", out updateFunction);
-            exportedFunctions.TryGetValue("on_touch_start", out onTouchStartFunction);
             exportedFunctions.TryGetValue("on_use", out onUseFunction);
+            exportedFunctions.TryGetValue("on_select", out onSelectFunction);
+            exportedFunctions.TryGetValue("on_equip", out onEquipFunction);
+            exportedFunctions.TryGetValue("on_unequip", out onEquipFunction);
         }
+
+        private void InvokeOnSelect()
+        {
+            onSelectFunction?.Invoke(ReturnValue.Unit);
+        }
+
+        private void InvokeOnUse()
+        {
+            onUseFunction?.Invoke(ReturnValue.Unit);
+        }
+
+        private void InvokeOnEquip()
+        {
+            onEquipFunction?.Invoke(ReturnValue.Unit);
+        }
+
+        private void InvokeOnUnequip()
+        {
+            onUnequipFunction?.Invoke(ReturnValue.Unit);
+        }
+
+
     }
 }
