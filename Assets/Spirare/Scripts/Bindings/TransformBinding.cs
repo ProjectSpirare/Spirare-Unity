@@ -59,7 +59,7 @@ namespace Spirare
                      new DelegateFunctionDefinition(
                          ValueType.ObjectId,
                          ValueType.Float,
-                         arg => GetTransformValue(arg, t => t.localScale.GetSpecificValue(axis))
+                         arg => GetTransformValue(arg, t => t.localScale.GetSpecificValue(axis, directional: false))
                          ));
             }
 
@@ -77,7 +77,7 @@ namespace Spirare
                      new DelegateFunctionDefinition(
                          ValueType.ObjectId,
                          ValueType.Float,
-                         arg => GetTransformValue(arg, t => t.lossyScale.GetSpecificValue(axis))
+                         arg => GetTransformValue(arg, t => t.lossyScale.GetSpecificValue(axis, directional: false))
                          ));
             }
 
