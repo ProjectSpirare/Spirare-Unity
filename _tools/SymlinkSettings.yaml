@@ -1,0 +1,7 @@
+symlinks:
+  - create-dest-folder: true
+    include-meta-file: true
+    src: ..\Assets\Spirare.Examples\Samples~
+    dest: ..\Assets\Spirare.Examples\Samples
+    target:
+      - Sample
