@@ -33,19 +33,23 @@ namespace Spirare
             // resourceObject.SetActive(false);
             resourceRoot = resourceObject.transform;
             resourceRoot.SetParent(transform, false);
-            _ = LoadAsync(path);
+
+            if (!string.IsNullOrEmpty(path))
+            {
+                _ = LoadAsync(path);
+            }
         }
 
         public async Task<bool> LoadAsync(string uri)
         {
             var xml = await GetContentAsync(uri);
-            var result = LoadXml(xml);
+            var result = LoadXml(xml, uri);
             return result;
         }
 
-        public bool LoadXml(string xml)
+        public bool LoadXml(string xml, string uri)
         {
-            if (parser.TryParse(xml, path, out var poml))
+            if (parser.TryParse(xml, uri, out var poml))
             {
                 LoadScene(poml.Scene);
                 LoadResource(poml.Resource);
