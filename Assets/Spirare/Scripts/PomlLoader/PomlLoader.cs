@@ -119,6 +119,9 @@ namespace Spirare
                 return null;
             }
 
+            var pomlElementComponent = t.gameObject.AddComponent<PomlElementComponent>();
+            pomlElementComponent.PomlElement = element;
+
             t.SetParent(parent, false);
 
             t.localPosition = element.Position;

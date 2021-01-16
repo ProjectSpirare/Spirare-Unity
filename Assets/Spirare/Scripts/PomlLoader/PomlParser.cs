@@ -105,9 +105,12 @@ namespace Spirare
 
             // Read common attributes
             var id = node.GetAttribute("id", null);
+
+            var attribute = ReadElementAttributeAttribute(node);
+
+            // transform
             var position = ReadVector3Attribute(node, "position", 0, directional: true);
             var scale = ReadVector3Attribute(node, "scale", 1, directional: false);
-
             var rotation = ReadRotationAttribute(node);
 
             var src = node.GetAttribute("src", null);
@@ -117,12 +120,37 @@ namespace Spirare
             }
 
             pomlElement.Children = childElements;
+            pomlElement.Attribute = attribute;
             pomlElement.Id = id;
             pomlElement.Position = position;
             pomlElement.Scale = scale;
             pomlElement.Rotation = rotation;
             pomlElement.Src = src;
             return pomlElement;
+        }
+
+        private ElementAttributeType ReadElementAttributeAttribute(XmlNode node)
+        {
+            var attributeString = node.GetAttribute("attribute");
+
+            var separator = new char[] { ' ' };
+            var attributeArray = attributeString.Split(separator, StringSplitOptions.RemoveEmptyEntries);
+
+            var attribute = ElementAttributeType.None;
+            foreach (var attributeToken in attributeArray)
+            {
+                switch (attributeToken.ToLower())
+                {
+                    case "static":
+                        attribute |= ElementAttributeType.Static;
+                        break;
+                    case "equipable":
+                    case "equippable":
+                        attribute |= ElementAttributeType.Equipable;
+                        break;
+                }
+            }
+            return attribute;
         }
 
         private Quaternion ReadRotationAttribute(XmlNode node)
@@ -184,7 +212,7 @@ namespace Spirare
 
         protected PomlElement InitPrimitiveElement(XmlNode node, string basePath)
         {
-            var primitiveTypeString = node.GetAttribute("type", "");
+            var primitiveTypeString = node.GetAttribute("shape", "");
             var primitiveType = ConvertToPrimitiveElementType(primitiveTypeString);
 
             return new PomlPrimitiveElement()

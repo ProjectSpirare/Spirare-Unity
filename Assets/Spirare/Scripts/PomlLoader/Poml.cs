@@ -21,6 +21,14 @@ namespace Spirare
         public List<PomlElement> Elements = new List<PomlElement>();
     }
 
+    [Flags]
+    public enum ElementAttributeType
+    {
+        None = 0,
+        Static = 1,
+        Equipable = 2,
+    }
+
     public class PomlElement
     {
         public enum PomlElementType
@@ -33,6 +41,7 @@ namespace Spirare
         }
 
         public PomlElementType ElementType { get; protected set; }
+        public ElementAttributeType Attribute;
         public string Id;
         public Vector3 Position;
         public Quaternion Rotation;
