@@ -61,7 +61,7 @@ namespace Spirare
                 }
                 else
                 {
-                    // TODO select
+                    Select(mousePosition);
                 }
             }
         }
@@ -107,6 +107,15 @@ namespace Spirare
             equipment.InvokeEvent(WasmEventType.Equip);
         }
 
+        private void Select(Vector3 mousePosition)
+        {
+            if (!TryGetSelectedObject(mousePosition, out var wasm))
+            {
+                return;
+            }
+            wasm.InvokeEvent(WasmEventType.Select);
+        }
+
         private bool TryGetSelectedObject(Vector3 screenPos, out WasmBehaviour wasm)
         {
             var ray = mainCamera.ScreenPointToRay(screenPos);
@@ -120,39 +129,5 @@ namespace Spirare
             wasm = hitObject.GetComponentInParent<WasmBehaviour>();
             return wasm != null;
         }
-  
-
-        /*
-        private void InvokeControlEvent(Vector3 pos, WasmEventType eventType)
-        {
-            var ray = mainCamera.ScreenPointToRay(pos);
-            if (!Physics.Raycast(ray, out var hit))
-            {
-                return;
-            }
-
-            var hitObject = hit.collider.gameObject;
-            var wasm = hitObject.GetComponentInParent<WasmBehaviour>();
-            if (wasm == null)
-            {
-                return;
-            }
-
-            switch (eventType)
-            {
-                case WasmEventType.Use:
-                    wasm.InvokeOnUse();
-                    break;
-                case WasmEventType.Equip:
-                    wasm.InvokeOnEquip();
-                    break;
-                case WasmEventType.Select:
-                    wasm.InvokeOnSelect();
-                    break;
-                default:
-                    break;
-            }
-        }
-        */
     }
 }
