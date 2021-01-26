@@ -11,7 +11,7 @@ namespace Spirare
 {
     public class SocketBinding : BindingBase
     {
-        private List<Socket> sockets = new List<Socket>();
+        private readonly Dictionary<int, Socket> sockets = new Dictionary<int, Socket>();
 
         public SocketBinding(Element element, ContentsStore store) : base(element, store)
         {
@@ -50,7 +50,7 @@ namespace Spirare
         }
         private IReadOnlyList<object> ErrorResult
         {
-            get => ReturnValue.FromObject(0);
+            get => ReturnValue.FromObject(1);
         }
 
         private IReadOnlyList<object> Connect(IReadOnlyList<object> arg)
@@ -65,20 +65,44 @@ namespace Spirare
             {
                 return Invalid;
             }
-            Debug.Log(ipv4Addr);
-            Debug.Log(port);
-            Debug.Log($"{ipv4Addr:x10}");
-            /*
-
-            var ipe = new IPEndPoint(ipv4Addr, port);
-            var socket = new Socket(ipe.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-            socket.Connect(ipe);
-
-            if (!socket.Connected)
+            if (!parser.TryReadPointer(out var fdPointer))
             {
                 return Invalid;
             }
-            sockets.Add(socket);
+
+            Debug.Log(ipv4Addr);
+            Debug.Log(port);
+            Debug.Log($"{ipv4Addr:x10}");
+
+            try
+            {
+                var ipBytes = BitConverter.GetBytes(ipv4Addr);
+                Array.Reverse(ipBytes);
+                var address = new IPAddress(ipBytes);
+                var ipe = new IPEndPoint(address, port);
+                var socket = new Socket(ipe.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+                socket.Connect(ipe);
+
+                if (!socket.Connected)
+                {
+                    return Invalid;
+                }
+
+                //                sockets.Add(socket);
+                //var socketDescriptor = sockets.Count;
+                var socketDescriptor = socket.Handle.ToInt32();
+                sockets[socketDescriptor] = socket;
+
+                Debug.Log($"Socket descriptor: {socketDescriptor}");
+                var memory32 = ModuleInstance.Memories[0].Int32;
+                memory32[fdPointer] = socketDescriptor;
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning(e);
+                return ErrorResult;
+            }
+            /*
             //var descriptor = 1;
             var descriptor = sockets.Count;
             return ReturnValue.FromObject(new List<object> { descriptor, 0 });
@@ -104,18 +128,81 @@ namespace Spirare
             */
             //return arg;
             Debug.Log("recv");
+            var parser = new ArgumentParser(arg, ModuleInstance);
+            if (!parser.TryReadInt(out var fd))
+            {
+                return Invalid;
+            }
+
+            Debug.Log(fd);
+
+            if (!sockets.TryGetValue(fd, out var socket))
+            {
+                return Invalid;
+            }
+            try
+            {
+                var buffer = new byte[100];
+                // var socket = sockets[fd - 1];
+                socket.Receive(buffer);
+
+                var text = System.Text.Encoding.UTF8.GetString(buffer);
+                Debug.Log(text);
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning(e);
+            }
+
+
+
+            /*
+            if (!parser.TryReadVectoredBuffer(out var buffer))
+            {
+                return Invalid;
+            }
+            */
+
             return ReturnValue.FromObject(0);
         }
 
         private IReadOnlyList<object> Send(IReadOnlyList<object> arg)
         {
             Debug.Log("send");
-            /*
             var parser = new ArgumentParser(arg, ModuleInstance);
-            if (!parser.TryReadInt(out var ipv4Addr))
+            if (!parser.TryReadInt(out var fd))
             {
                 return Invalid;
             }
+
+            if (!parser.TryReadVectoredBuffer(out IList<ArraySegment<byte>> buffer))
+            {
+                return Invalid;
+            }
+
+            Debug.Log(fd);
+            if (!sockets.TryGetValue(fd, out var socket))
+            {
+                return Invalid;
+            }
+            try
+            {
+                socket.Send(buffer);
+
+                /*
+                var text = System.Text.Encoding.UTF8.GetString(buffer);
+                Debug.Log(text);
+                */
+
+                // TODO 送信バイト数の記録
+
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning(e);
+            }
+
+            /*
             if (!parser.TryReadInt(out var port))
             {
                 return Invalid;

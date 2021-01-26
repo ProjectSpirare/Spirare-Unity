@@ -70,7 +70,7 @@ namespace Spirare
             {
                 return ErrorResult;
             }
-            if (!parser.TryReadVectoredBuffer(out var buffer))
+            if (!parser.TryReadVectoredBuffer(out byte[] buffer))
             {
                 return ErrorResult;
             }
@@ -124,8 +124,8 @@ namespace Spirare
 
             try
             {
-                var text = Encoding.UTF8.GetString(buffer);
-                Debug.Log(text);
+                //var text = Encoding.UTF8.GetString(buffer);
+                //Debug.Log(text);
             }
             catch (Exception e)
             {

@@ -183,6 +183,36 @@ namespace Spirare
             }
         }
 
+        public bool TryReadVectoredBuffer(out IList<ArraySegment<byte>> buffer)
+        {
+            buffer = new List<ArraySegment<byte>>();
+
+            if (!TryReadUInt(out uint iovs) || !TryReadUInt(out uint iovsLen))
+            {
+                return false;
+            }
+
+            try
+            {
+                var memory32 = Memory.Int32;
+                for (uint i = 0; i < iovsLen; i++)
+                {
+                    var start = memory32[iovs + i * 8];
+                    var length = memory32[iovs + i * 8 + 4];
+                    var data = ReadBytes(start, length);
+
+                    var segment = new ArraySegment<byte>(data);
+                    buffer.Add(segment);
+                }
+                return true;
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning(e);
+                return false;
+            }
+        }
+
 
         public bool TryReadVector3(out Vector3 vector, bool directional = true)
         {
