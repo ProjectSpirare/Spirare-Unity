@@ -8,10 +8,17 @@ namespace Spirare
     public class ArgsBinding : BindingBase
     {
         private readonly List<string> args;
+        private readonly List<string> envs;
 
-        public ArgsBinding(Element element, ContentsStore store, List<string> args) : base(element, store)
+        private int Argc => args.Count;
+
+        private LinearMemoryAsInt8 Memory8 => ModuleInstance.Memories[0].Int8;
+        private LinearMemoryAsInt32 Memory32 => ModuleInstance.Memories[0].Int32;
+
+        public ArgsBinding(Element element, ContentsStore store, List<string> args, List<string> envs) : base(element, store)
         {
             this.args = args;
+            this.envs = new List<string>() { "RUST_BACKTRACE=1" };
         }
 
         public override PredefinedImporter GenerateImporter()
@@ -30,6 +37,18 @@ namespace Spirare
                      ValueType.Short,
                      ArgsSizesGet
                      ));
+            importer.DefineFunction("environ_get",
+                 new DelegateFunctionDefinition(
+                     ValueType.PointerAndPointer,
+                     ValueType.Short,
+                     EnvironGet
+                     ));
+            importer.DefineFunction("environ_sizes_get",
+                 new DelegateFunctionDefinition(
+                     ValueType.PointerAndPointer,
+                     ValueType.Short,
+                     EnvironSizesGet
+                     ));
             return importer;
         }
 
@@ -45,16 +64,9 @@ namespace Spirare
 
         private IReadOnlyList<object> ArgsGet(IReadOnlyList<object> arg)
         {
-            var memory = ModuleInstance.Memories[0];
-            var memory8 = memory.Int8;
-            var memory32 = memory.Int32;
-
+            var memory32 = Memory32;
             var parser = new ArgumentParser(arg, ModuleInstance);
-            if (!parser.TryReadUInt(out uint argvOffset))
-            {
-                return ErrorResult;
-            }
-            if (!parser.TryReadUInt(out uint argvBufferOffset))
+            if (!parser.TryReadPointer(out uint argvOffset, out uint argvBufferOffset))
             {
                 return ErrorResult;
             }
@@ -64,7 +76,7 @@ namespace Spirare
                 memory32[argvOffset] = ArgumentParser.InterpretAsInt(argvBufferOffset);
                 argvOffset += 4;
 
-                argvBufferOffset = WriteStringToMemory(memory8, argString, argvBufferOffset);
+                argvBufferOffset = WriteStringToMemory(Memory8, argString, argvBufferOffset);
             }
 
             return SuccessResult;
@@ -72,21 +84,14 @@ namespace Spirare
 
         private IReadOnlyList<object> ArgsSizesGet(IReadOnlyList<object> arg)
         {
-            var memory = ModuleInstance.Memories[0];
-            var memory8 = memory.Int8;
-            var memory32 = memory.Int32;
+            var memory32 = Memory32;
 
             var parser = new ArgumentParser(arg, ModuleInstance);
-            if (!parser.TryReadUInt(out uint argvOffset))
-            {
-                return ErrorResult;
-            }
-            if (!parser.TryReadUInt(out uint argvBufferOffset))
+            if (!parser.TryReadPointer(out uint argvOffset, out uint argvBufferOffset))
             {
                 return ErrorResult;
             }
 
-            var argc = args.Count;
             var dataSize = 0;
             foreach (var argString in args)
             {
@@ -94,11 +99,55 @@ namespace Spirare
                 dataSize += bytes.Length + 1;
             }
 
-            memory32[argvOffset] = argc;
+            memory32[argvOffset] = Argc;
             memory32[argvBufferOffset] = dataSize;
 
             return SuccessResult;
         }
+
+        private IReadOnlyList<object> EnvironGet(IReadOnlyList<object> arg)
+        {
+            var memory32 = Memory32;
+            var parser = new ArgumentParser(arg, ModuleInstance);
+            if (!parser.TryReadPointer(out uint argvOffset, out uint argvBufferOffset))
+            {
+                return ErrorResult;
+            }
+
+            foreach (var env in envs)
+            {
+                memory32[argvOffset] = ArgumentParser.InterpretAsInt(argvBufferOffset);
+                argvOffset += 4;
+
+                argvBufferOffset = WriteStringToMemory(Memory8, env, argvBufferOffset);
+            }
+
+            return SuccessResult;
+        }
+
+        private IReadOnlyList<object> EnvironSizesGet(IReadOnlyList<object> arg)
+        {
+            var memory32 = Memory32;
+
+            var parser = new ArgumentParser(arg, ModuleInstance);
+            if (!parser.TryReadPointer(out uint argvOffset, out uint argvBufferOffset))
+            {
+                return ErrorResult;
+            }
+
+            var dataSize = 0;
+            foreach (var env in envs)
+            {
+                var bytes = System.Text.Encoding.UTF8.GetBytes(env);
+                dataSize += bytes.Length + 1;
+            }
+
+            memory32[argvOffset] = Argc;
+            memory32[argvBufferOffset] = dataSize;
+
+            return SuccessResult;
+        }
+
 
         private uint WriteStringToMemory(LinearMemoryAsInt8 memory, string text, uint offset)
         {

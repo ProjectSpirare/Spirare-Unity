@@ -70,6 +70,17 @@ namespace Spirare
             }
         }
 
+        public bool TryReadPointer(out uint ptr)
+        {
+            return TryReadUInt(out ptr);
+        }
+
+        public bool TryReadPointer(out uint ptr0, out uint ptr1)
+        {
+            ptr1 = 0;
+            return TryReadPointer(out ptr0) && TryReadPointer(out ptr1);
+        }
+
         public bool TryReadLong(out long value)
         {
             if (!TryReadObject(out var valueObject))
