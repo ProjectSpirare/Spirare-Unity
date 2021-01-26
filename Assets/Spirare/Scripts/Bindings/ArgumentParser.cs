@@ -152,6 +152,38 @@ namespace Spirare
             }
         }
 
+        public bool TryReadVectoredBuffer(out byte[] buffer)
+        {
+            buffer = new byte[0];
+
+            if (!TryReadUInt(out uint iovs) || !TryReadUInt(out uint iovsLen))
+            {
+                return false;
+            }
+
+            try
+            {
+                var memory32 = Memory.Int32;
+                for (uint i = 0; i < iovsLen; i++)
+                {
+                    var start = memory32[iovs + i * 8];
+                    var length = memory32[iovs + i * 8 + 4];
+
+                    var data = ReadBytes(start, length);
+                    var offset = buffer.Length;
+                    Array.Resize(ref buffer, offset + length);
+                    Array.Copy(data, 0, buffer, offset, length);
+                }
+                return true;
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning(e);
+                return false;
+            }
+        }
+
+
         public bool TryReadVector3(out Vector3 vector, bool directional = true)
         {
             if (TryReadFloat(out var x) &&
@@ -218,6 +250,17 @@ namespace Spirare
             value = arg[index];
             index += 1;
             return true;
+        }
+
+        private byte[] ReadBytes(int start, int length)
+        {
+            var data = new byte[length];
+            for (var j = 0; j < length; j++)
+            {
+                var index = (uint)(start + j);
+                data[j] = (byte)Memory.Int8[index];
+            }
+            return data;
         }
     }
 }
