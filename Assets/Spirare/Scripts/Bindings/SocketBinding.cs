@@ -55,7 +55,6 @@ namespace Spirare
 
         private IReadOnlyList<object> Connect(IReadOnlyList<object> arg)
         {
-            Debug.Log("Connect");
             var parser = new ArgumentParser(arg, ModuleInstance);
             if (!parser.TryReadInt(out var ipv4Addr))
             {
@@ -70,16 +69,13 @@ namespace Spirare
                 return Invalid;
             }
 
-            Debug.Log(ipv4Addr);
-            Debug.Log(port);
-            Debug.Log($"{ipv4Addr:x10}");
-
             try
             {
                 var ipBytes = BitConverter.GetBytes(ipv4Addr);
                 Array.Reverse(ipBytes);
                 var address = new IPAddress(ipBytes);
                 var ipe = new IPEndPoint(address, port);
+
                 var socket = new Socket(ipe.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
                 socket.Connect(ipe);
 
@@ -88,87 +84,90 @@ namespace Spirare
                     return Invalid;
                 }
 
-                //                sockets.Add(socket);
-                //var socketDescriptor = sockets.Count;
                 var socketDescriptor = socket.Handle.ToInt32();
                 sockets[socketDescriptor] = socket;
 
-                Debug.Log($"Socket descriptor: {socketDescriptor}");
                 var memory32 = ModuleInstance.Memories[0].Int32;
                 memory32[fdPointer] = socketDescriptor;
+                return ReturnValue.FromObject(0);
             }
             catch (Exception e)
             {
                 Debug.LogWarning(e);
                 return ErrorResult;
             }
-            /*
-            //var descriptor = 1;
-            var descriptor = sockets.Count;
-            return ReturnValue.FromObject(new List<object> { descriptor, 0 });
-            */
-            //return arg;
-            return ReturnValue.FromObject(0);
         }
 
         private IReadOnlyList<object> Receive(IReadOnlyList<object> arg)
         {
-            /*
-            var parser = new ArgumentParser(arg, ModuleInstance);
-            if (!parser.TryReadInt(out var ipv4Addr))
-            {
-                return Invalid;
-            }
-            if (!parser.TryReadInt(out var port))
-            {
-                return Invalid;
-            }
-            return ReturnValue.FromObject(new List<object> { 0, 0 });
-            //return ReturnValue.Unit;
-            */
-            //return arg;
-            Debug.Log("recv");
             var parser = new ArgumentParser(arg, ModuleInstance);
             if (!parser.TryReadInt(out var fd))
             {
                 return Invalid;
             }
 
-            Debug.Log(fd);
+            if (!parser.TryReadUInt(out uint iovs) || !parser.TryReadUInt(out uint iovsLen))
+            {
+                return Invalid;
+            }
+
+            if (!parser.TryReadInt(out var riFlags))
+            {
+                return Invalid;
+            }
+
+            if (!parser.TryReadPointer(out var roDataLengthPointer))
+            {
+                return Invalid;
+            }
+
+            if (!parser.TryReadInt(out var roFlags))
+            {
+                return Invalid;
+            }
 
             if (!sockets.TryGetValue(fd, out var socket))
             {
                 return Invalid;
             }
+
+            var receivedLengthSum = 0;
+            var memory32 = ModuleInstance.Memories[0].Int32;
+            var memory8 = ModuleInstance.Memories[0].Int8;
             try
             {
-                var buffer = new byte[100];
-                // var socket = sockets[fd - 1];
-                socket.Receive(buffer);
+                for (uint i = 0; i < iovsLen; i++)
+                {
+                    var start = memory32[iovs + i * 8];
+                    var length = memory32[iovs + i * 8 + 4];
 
-                var text = System.Text.Encoding.UTF8.GetString(buffer);
-                Debug.Log(text);
+                    var buffer = new byte[length];
+                    var receivedLength = socket.Receive(buffer);
+
+                    for (var j = 0; j < receivedLength; j++)
+                    {
+                        memory8[(uint)(start + j)] = (sbyte)buffer[j];
+                    }
+
+                    receivedLengthSum += receivedLength;
+                }
             }
             catch (Exception e)
             {
                 Debug.LogWarning(e);
+                return ErrorResult;
             }
-
-
-
-            /*
-            if (!parser.TryReadVectoredBuffer(out var buffer))
+            finally
             {
-                return Invalid;
+                memory32[roDataLengthPointer] = receivedLengthSum;
+
             }
-            */
 
             return ReturnValue.FromObject(0);
         }
 
         private IReadOnlyList<object> Send(IReadOnlyList<object> arg)
         {
-            Debug.Log("send");
             var parser = new ArgumentParser(arg, ModuleInstance);
             if (!parser.TryReadInt(out var fd))
             {
@@ -179,40 +178,35 @@ namespace Spirare
             {
                 return Invalid;
             }
+            if (!parser.TryReadInt(out var siFlags))
+            {
+                return Invalid;
+            }
+            if (!parser.TryReadPointer(out var soDataLengthPointer))
+            {
+                return Invalid;
+            }
 
-            Debug.Log(fd);
+
             if (!sockets.TryGetValue(fd, out var socket))
             {
                 return Invalid;
             }
+
+
             try
             {
-                socket.Send(buffer);
-
-                /*
-                var text = System.Text.Encoding.UTF8.GetString(buffer);
-                Debug.Log(text);
-                */
-
-                // TODO 送信バイト数の記録
-
+                var sentMessageLength = socket.Send(buffer);
+                var memory32 = ModuleInstance.Memories[0].Int32;
+                memory32[soDataLengthPointer] = sentMessageLength;
             }
             catch (Exception e)
             {
                 Debug.LogWarning(e);
+                return ErrorResult;
             }
 
-            /*
-            if (!parser.TryReadInt(out var port))
-            {
-                return Invalid;
-            }
-            return ReturnValue.FromObject(new List<object> { 0, 0 });
-            //return ReturnValue.Unit;
-            */
-            //return arg;
             return ReturnValue.FromObject(0);
         }
-
     }
 }
