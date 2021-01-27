@@ -1,6 +1,8 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 using UnityEngine;
 using Wasm;
 using Wasm.Interpret;
@@ -79,25 +81,38 @@ namespace Spirare
 
             var wasiFunctions = new List<string>()
             {
-                "proc_exit",
-                "fd_read",
-                "fd_write",
+                //"proc_exit",
+                //"fd_read",
+                //"fd_write",
+                //"fd_close",
                 "fd_prestat_get",
                 "fd_prestat_dir_name",
-                "environ_sizes_get",
-                "environ_get",
+                //"environ_sizes_get",
+                //"environ_get",
                 // "random_get",
                 //"env.abort",
                 "abort",
             };
 
+            importer.DefineFunction("proc_exit",
+                 new DelegateFunctionDefinition(
+                     new WasmValueType[] { WasmValueType.Int32 },
+                     new WasmValueType[] { },
+                     x => new object[0]
+                     ));
+            importer.DefineFunction("clock_time_get",
+                 new DelegateFunctionDefinition(
+                     new WasmValueType[] { WasmValueType.Int32, WasmValueType.Int64, WasmValueType.Int32 },
+                     new WasmValueType[] { WasmValueType.Int32 },
+                     GetTime
+                     ));
             foreach (var wasiFunction in wasiFunctions)
             {
                 importer.DefineFunction(wasiFunction,
                      new DelegateFunctionDefinition(
                          new WasmValueType[] { },
                          new WasmValueType[] { },
-                         x => x
+                         x => ReturnValue.FromObject(0)
                          ));
             }
             importer.DefineFunction("random_get",
@@ -119,8 +134,14 @@ namespace Spirare
             var scriptName = "";
             args.Insert(0, scriptName);
 
-            var argsBinding = new ArgsBinding(element, store, args);
+            var argsBinding = new ArgsBinding(element, store, args, null);
             importer.IncludeDefinitions(argsBinding.Importer);
+
+            var fileDescriptorBinding = new FileDescriptorBinding(element, store);
+            importer.IncludeDefinitions(fileDescriptorBinding.Importer);
+
+            var socketBinding = new SocketBinding(element, store);
+            importer.IncludeDefinitions(socketBinding.Importer);
 
             var debugBinding = new DebugBinding(element, store);
             importer.IncludeDefinitions(debugBinding.Importer);
@@ -137,19 +158,35 @@ namespace Spirare
             var timeBinding = new TimeBinding(element, store);
             importer.IncludeDefinitions(timeBinding.Importer);
 
-            module = ModuleInstance.Instantiate(file, importer);
+            try
+            {
+                module = ModuleInstance.Instantiate(file, importer);
 
-            argsBinding.ModuleInstance = module;
-            gameObjectBinding.ModuleInstance = module;
-            debugBinding.ModuleInstance = module;
+                argsBinding.ModuleInstance = module;
+                fileDescriptorBinding.ModuleInstance = module;
+                socketBinding.ModuleInstance = module;
 
-            var exportedFunctions = module.ExportedFunctions;
-            exportedFunctions.TryGetValue("start", out startFunction);
-            exportedFunctions.TryGetValue("update", out updateFunction);
-            exportedFunctions.TryGetValue("on_use", out onUseFunction);
-            exportedFunctions.TryGetValue("on_select", out onSelectFunction);
-            exportedFunctions.TryGetValue("on_equip", out onEquipFunction);
-            exportedFunctions.TryGetValue("on_unequip", out onEquipFunction);
+                gameObjectBinding.ModuleInstance = module;
+                debugBinding.ModuleInstance = module;
+
+                var exportedFunctions = module.ExportedFunctions;
+                exportedFunctions.TryGetValue("start", out startFunction);
+                exportedFunctions.TryGetValue("update", out updateFunction);
+                exportedFunctions.TryGetValue("on_use", out onUseFunction);
+                exportedFunctions.TryGetValue("on_select", out onSelectFunction);
+                exportedFunctions.TryGetValue("on_equip", out onEquipFunction);
+                exportedFunctions.TryGetValue("on_unequip", out onEquipFunction);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(e);
+            }
+        }
+
+        private IReadOnlyList<object> GetTime(IReadOnlyList<object> arg)
+        {
+            Debug.Log("clock");
+            return ReturnValue.FromObject(0);
         }
 
         private void InvokeOnSelect()
