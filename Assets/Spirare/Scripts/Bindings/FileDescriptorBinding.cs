@@ -74,67 +74,23 @@ namespace Spirare
             {
                 return ErrorResult;
             }
-            /*
-            if (!parser.TryReadUInt(out uint iovs))
-            {
-                return ErrorResult;
-            }
-            if (!parser.TryReadUInt(out uint iovsLen))
-            {
-                return ErrorResult;
-            }
-            */
             if (!parser.TryReadUInt(out uint nwritten))
             {
                 return ErrorResult;
             }
 
-            /*
-            var totalSize = 0;
-            var ptr = iovs;
-            //Debug.Log(iovs);
-            //Debug.Log($"iovs: {iovs}, iovsLen: {iovsLen}");
-            for (uint i = 0; i < iovsLen; i++)
-            {
-                var start = memory32[iovs + i * 8];
-                var size = memory32[iovs + i * 8 + 4];
-                //Debug.Log($"start: {start}, size: {size}");
-
-                //size = 200;
-                var data = new byte[size];
-                string value;
-                try
-                {
-                    for (var j = 0; j < size; j++)
-                    {
-                        var index = (uint)(start + j);
-                        data[j] = (byte)memory.Int8[index];
-                    }
-                    value = Encoding.UTF8.GetString(data);
-                    Debug.Log(value);
-                    totalSize += size;
-                }
-                catch (Exception e)
-                {
-                    Debug.LogWarning(e);
-                    value = "";
-                }
-            }
-            */
-
             try
             {
-                //var text = Encoding.UTF8.GetString(buffer);
-                //Debug.Log(text);
+                var text = Encoding.UTF8.GetString(buffer);
+                Debug.Log(text);
+                memory32[nwritten] = buffer.Length;
+                return ReturnValue.FromObject(0);
             }
             catch (Exception e)
             {
                 Debug.LogWarning(e);
+                return ErrorResult;
             }
-
-            memory32[nwritten] = buffer.Length;
-            //Debug.Log($"fd: {fd}, iovsLen: {iovsLen}");
-            return ReturnValue.FromObject(0);
         }
 
         private IReadOnlyList<object> Close(IReadOnlyList<object> arg)
