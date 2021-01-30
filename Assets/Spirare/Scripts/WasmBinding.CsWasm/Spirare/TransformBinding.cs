@@ -4,89 +4,67 @@ using System.Collections.Generic;
 using UnityEngine;
 using Wasm.Interpret;
 
-namespace Spirare
+namespace Spirare.WasmBinding.CsWasm
 {
     public class TransformBinding : BindingBase
     {
+        private readonly TransformBinding1 transformBinding;
+
         public TransformBinding(Element element, ContentsStore store) : base(element, store)
         {
+            transformBinding = new TransformBinding1(element, store);
         }
 
         public override PredefinedImporter GenerateImporter()
         {
             var importer = new PredefinedImporter();
 
-            // Local position
-            foreach (Vector3ElementType axis in Enum.GetValues(typeof(Vector3ElementType)))
+            var coordinateValues = Enum.GetValues(typeof(CoordinateType));
+            var vector3ElementValues = Enum.GetValues(typeof(Vector3ElementType));
+
+            // Position
+            foreach (CoordinateType coordinate in coordinateValues)
             {
-                importer.DefineFunction($"transform_get_local_position_{axis}",
+                foreach (Vector3ElementType axis in vector3ElementValues)
+                {
+                    var functionName = $"transform_get_{coordinate}_position_{axis}";
+                    importer.DefineFunction(functionName,
+                         new DelegateFunctionDefinition(
+                             ValueType.ObjectId,
+                             ValueType.Float,
+                             arg => GetPosition(arg, axis, coordinate)
+                             ));
+                }
+
+                importer.DefineFunction($"transform_set_{coordinate}_position",
                      new DelegateFunctionDefinition(
-                         ValueType.ObjectId,
-                         ValueType.Float,
-                         arg => GetTransformValue(arg, t => t.localPosition.GetSpecificValue(axis))
+                         ValueType.IdAndVector3,
+                         ValueType.Unit,
+                         arg => SetPosition(arg, coordinate)
                          ));
             }
 
-            importer.DefineFunction("transform_set_local_position",
-                 new DelegateFunctionDefinition(
-                     ValueType.IdAndVector3,
-                     ValueType.Unit,
-                     SetLocalPosition
-                     ));
-
-            // World position
-            foreach (Vector3ElementType axis in Enum.GetValues(typeof(Vector3ElementType)))
+            // Scale
+            foreach (CoordinateType coordinate in coordinateValues)
             {
-                importer.DefineFunction($"transform_get_world_position_{axis}",
+                foreach (Vector3ElementType axis in vector3ElementValues)
+                {
+                    var functionName = $"transform_get_{coordinate}_scale_{axis}";
+                    importer.DefineFunction(functionName,
+                         new DelegateFunctionDefinition(
+                             ValueType.ObjectId,
+                             ValueType.Float,
+                             arg => GetScale(arg, axis, coordinate)
+                             ));
+                }
+
+                importer.DefineFunction($"transform_set_{coordinate}_scale",
                      new DelegateFunctionDefinition(
-                         ValueType.ObjectId,
-                         ValueType.Float,
-                         arg => GetTransformValue(arg, t => t.position.GetSpecificValue(axis))
+                         ValueType.IdAndVector3,
+                         ValueType.Unit,
+                         arg => SetScale(arg, coordinate)
                          ));
             }
-
-            importer.DefineFunction("transform_set_world_position",
-                 new DelegateFunctionDefinition(
-                     ValueType.IdAndVector3,
-                     ValueType.Unit,
-                     SetWorldPosition
-                     ));
-
-            // Local scale
-            foreach (Vector3ElementType axis in Enum.GetValues(typeof(Vector3ElementType)))
-            {
-                importer.DefineFunction($"transform_get_local_scale_{axis}",
-                     new DelegateFunctionDefinition(
-                         ValueType.ObjectId,
-                         ValueType.Float,
-                         arg => GetTransformValue(arg, t => t.localScale.GetSpecificValue(axis, directional: false))
-                         ));
-            }
-
-            importer.DefineFunction("transform_set_local_scale",
-                 new DelegateFunctionDefinition(
-                     ValueType.IdAndVector3,
-                     ValueType.Unit,
-                     SetLocalScale
-                     ));
-
-            // World scale
-            foreach (Vector3ElementType axis in Enum.GetValues(typeof(Vector3ElementType)))
-            {
-                importer.DefineFunction($"transform_get_world_scale_{axis}",
-                     new DelegateFunctionDefinition(
-                         ValueType.ObjectId,
-                         ValueType.Float,
-                         arg => GetTransformValue(arg, t => t.lossyScale.GetSpecificValue(axis, directional: false))
-                         ));
-            }
-
-            importer.DefineFunction("transform_set_world_scale",
-                 new DelegateFunctionDefinition(
-                     ValueType.IdAndVector3,
-                     ValueType.Unit,
-                     SetWorldScale
-                     ));
 
             // Local rotation
             var quaternionElements = Enum.GetValues(typeof(QuaternionElementType));
@@ -107,7 +85,7 @@ namespace Spirare
                      SetLocalRotation
                      ));
 
-            // World position
+            // World rotation
             foreach (QuaternionElementType axis in quaternionElements)
             {
                 importer.DefineFunction($"transform_get_world_rotation_{axis}",
@@ -127,6 +105,35 @@ namespace Spirare
             return importer;
         }
 
+        private IReadOnlyList<object> GetPosition(IReadOnlyList<object> arg, Vector3ElementType axis, CoordinateType coordinate)
+        {
+            var parser = new ArgumentParser(arg);
+            var value = transformBinding.GetPosition(parser, axis, coordinate);
+            return ReturnValue.FromObject(value);
+        }
+
+        private IReadOnlyList<object> SetPosition(IReadOnlyList<object> arg, CoordinateType coordinate)
+        {
+            var parser = new ArgumentParser(arg);
+            transformBinding.SetPosition(parser, coordinate);
+            return ReturnValue.Unit;
+        }
+
+        private IReadOnlyList<object> GetScale(IReadOnlyList<object> arg, Vector3ElementType axis, CoordinateType coordinate)
+        {
+            var parser = new ArgumentParser(arg);
+            var value = transformBinding.GetScale(parser, axis, coordinate);
+            return ReturnValue.FromObject(value);
+        }
+
+        private IReadOnlyList<object> SetScale(IReadOnlyList<object> arg, CoordinateType coordinate)
+        {
+            var parser = new ArgumentParser(arg);
+            transformBinding.SetScale(parser, coordinate);
+            return ReturnValue.Unit;
+        }
+
+
         private IReadOnlyList<object> InvalidFloatValue
         {
             get => ReturnValue.FromObject(float.NaN);
@@ -144,21 +151,6 @@ namespace Spirare
             return ReturnValue.FromObject(value);
         }
 
-        private IReadOnlyList<object> SetVector3(IReadOnlyList<object> arg, Action<Transform, Vector3> action, bool directional = true)
-        {
-            var parser = new ArgumentParser(arg);
-            if (!TryGetElementWithArg(parser, store, out var element))
-            {
-                return ReturnValue.Unit;
-            }
-
-            if (!parser.TryReadVector3(out var position, directional))
-            {
-                return ReturnValue.Unit;
-            }
-            action?.Invoke(element.GameObject.transform, position);
-            return ReturnValue.Unit;
-        }
 
         private IReadOnlyList<object> SetQuaternion(IReadOnlyList<object> arg, Action<Transform, Quaternion> action)
         {
@@ -176,17 +168,6 @@ namespace Spirare
             return ReturnValue.Unit;
         }
 
-
-        private IReadOnlyList<object> SetLocalPosition(IReadOnlyList<object> arg)
-        {
-            return SetVector3(arg, (t, v) => t.localPosition = v);
-        }
-
-        private IReadOnlyList<object> SetWorldPosition(IReadOnlyList<object> arg)
-        {
-            return SetVector3(arg, (t, v) => t.position = v);
-        }
-
         private IReadOnlyList<object> SetLocalRotation(IReadOnlyList<object> arg)
         {
             return SetQuaternion(arg, (t, q) => t.localRotation = q);
@@ -197,34 +178,5 @@ namespace Spirare
             return SetQuaternion(arg, (t, q) => t.rotation = q);
         }
 
-        private IReadOnlyList<object> SetLocalScale(IReadOnlyList<object> arg)
-        {
-            return SetVector3(arg, (t, v) => t.localScale = v, directional: false);
-        }
-
-        private IReadOnlyList<object> SetWorldScale(IReadOnlyList<object> arg)
-        {
-            return SetVector3(arg, SetWorldScale, directional: false);
-        }
-
-        private void SetWorldScale(Transform transform, Vector3 scale)
-        {
-            transform.localScale = Vector3.one;
-            var lossyScale = transform.lossyScale;
-
-            Vector3 localScale;
-            try
-            {
-                var x = scale.x / lossyScale.x;
-                var y = scale.y / lossyScale.y;
-                var z = scale.z / lossyScale.z;
-                localScale = new Vector3(x, y, z);
-            }
-            catch (Exception)
-            {
-                localScale = scale;
-            }
-            transform.localScale = localScale;
-        }
     }
 }
