@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace Spirare.WasmBinding
 {
@@ -9,12 +10,17 @@ namespace Spirare.WasmBinding
         protected Element thisElement;
         protected ContentsStore store;
 
-        public SpirareBindingBase(Element element, ContentsStore store)
+        private SynchronizationContext context = null;
+        private Thread mainThread = null;
+
+        public SpirareBindingBase(Element element, ContentsStore store, SynchronizationContext context, Thread mainThread)
         {
             thisElement = element;
             this.store = store;
-        }
 
+            this.context = context;
+            this.mainThread = mainThread;
+        }
 
         protected bool TryGetElementWithArg(ArgumentParser parser, out Element element)
         {
@@ -36,6 +42,38 @@ namespace Spirare.WasmBinding
             }
 
             return true;
+        }
+
+        protected T RunOnUnityThread<T>(Func<T> func)
+        {
+            var currentThread = Thread.CurrentThread;
+            if (currentThread == mainThread)
+            {
+                return func.Invoke();
+            }
+
+            T result = default;
+
+            context.Send(_ =>
+            {
+                result = func.Invoke();
+            }, null);
+
+            return result;
+        }
+
+        protected void RunOnUnityThread(Action action)
+        {
+            var currentThread = Thread.CurrentThread;
+            if (currentThread == mainThread)
+            {
+                action.Invoke();
+            }
+
+            context.Post(_ =>
+            {
+                action.Invoke();
+            }, null);
         }
     }
 }

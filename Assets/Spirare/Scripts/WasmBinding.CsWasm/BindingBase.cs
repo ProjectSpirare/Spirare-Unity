@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading;
 using UnityEngine;
 using Wasm.Interpret;
 
@@ -26,12 +27,20 @@ namespace Spirare
 
         protected Element thisElement;
         protected ContentsStore store;
+        protected SynchronizationContext context;
+        protected Thread mainThread;
 
         public BindingBase(Element element, ContentsStore store)
         {
             Importer = GenerateImporter();
             this.thisElement = element;
             this.store = store;
+        }
+
+        public BindingBase(Element element, ContentsStore store, SynchronizationContext context, Thread mainThread) : this(element, store)
+        {
+            this.context = context;
+            this.mainThread = mainThread;
         }
 
         public abstract PredefinedImporter GenerateImporter();

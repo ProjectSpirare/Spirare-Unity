@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading;
 using Wasm.Interpret;
 
 namespace Spirare.WasmBinding.CsWasm
@@ -9,9 +10,10 @@ namespace Spirare.WasmBinding.CsWasm
     {
         private readonly WasmBinding.TransformBinding transformBinding;
 
-        public TransformBinding(Element element, ContentsStore store) : base(element, store)
+        public TransformBinding(Element element, ContentsStore store, SynchronizationContext context, Thread mainThread)
+            : base(element, store, context, mainThread)
         {
-            transformBinding = new WasmBinding.TransformBinding(element, store);
+            transformBinding = new WasmBinding.TransformBinding(element, store, context, mainThread);
         }
 
         public override PredefinedImporter GenerateImporter()
