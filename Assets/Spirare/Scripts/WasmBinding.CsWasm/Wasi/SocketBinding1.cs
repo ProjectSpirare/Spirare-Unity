@@ -4,58 +4,28 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using UnityEngine;
-using Wasm;
-using Wasm.Interpret;
 
-namespace Spirare
+namespace Spirare.WasmBinding
 {
-    public class SocketBinding : BindingBase
+    public class SocketBinding1
     {
         private readonly Dictionary<int, Socket> sockets = new Dictionary<int, Socket>();
 
-        public SocketBinding(Element element, ContentsStore store) : base(element, store)
+        private int Success
         {
+            get => 0;
+        }
+        private int Invalid
+        {
+            get => 1;
+        }
+        private int ErrorResult
+        {
+            get => 1;
         }
 
-        public override PredefinedImporter GenerateImporter()
+        public int Connect(ArgumentParser parser, MemoryReader memoryReader)
         {
-            var importer = new PredefinedImporter();
-
-            importer.DefineFunction("sock_connect",
-                 new DelegateFunctionDefinition(
-                     new WasmValueType[] { WasmValueType.Int32, WasmValueType.Int32, WasmValueType.Int32 },
-                     new WasmValueType[] { WasmValueType.Int32, },
-                     Connect
-                     ));
-
-            importer.DefineFunction("sock_send",
-                 new DelegateFunctionDefinition(
-                     new WasmValueType[] { WasmValueType.Int32, WasmValueType.Int32, WasmValueType.Int32, WasmValueType.Int32, WasmValueType.Int32 },
-                     new WasmValueType[] { WasmValueType.Int32, },
-                     Send
-                     ));
-
-            importer.DefineFunction("sock_recv",
-                 new DelegateFunctionDefinition(
-                     new WasmValueType[] { WasmValueType.Int32, WasmValueType.Int32, WasmValueType.Int32, WasmValueType.Int32, WasmValueType.Int32, WasmValueType.Int32 },
-                     new WasmValueType[] { WasmValueType.Int32, },
-                     Receive
-                     ));
-            return importer;
-        }
-
-        private IReadOnlyList<object> Invalid
-        {
-            get => ReturnValue.FromObject(-1);
-        }
-        private IReadOnlyList<object> ErrorResult
-        {
-            get => ReturnValue.FromObject(1);
-        }
-
-        private IReadOnlyList<object> Connect(IReadOnlyList<object> arg)
-        {
-            var parser = new ArgumentParser(arg, ModuleInstance);
             if (!parser.TryReadInt(out var ipv4Addr))
             {
                 return Invalid;
@@ -87,9 +57,11 @@ namespace Spirare
                 var socketDescriptor = socket.Handle.ToInt32();
                 sockets[socketDescriptor] = socket;
 
-                var memory32 = ModuleInstance.Memories[0].Int32;
-                memory32[fdPointer] = socketDescriptor;
-                return ReturnValue.FromObject(0);
+                if (memoryReader.TryWrite(fdPointer, socketDescriptor))
+                {
+                    return Success;
+                }
+                return ErrorResult;
             }
             catch (Exception e)
             {
@@ -98,9 +70,8 @@ namespace Spirare
             }
         }
 
-        private IReadOnlyList<object> Receive(IReadOnlyList<object> arg)
+        public int Receive(ArgumentParser parser, MemoryReader memoryReader)
         {
-            var parser = new ArgumentParser(arg, ModuleInstance);
             if (!parser.TryReadInt(out var fd))
             {
                 return Invalid;
@@ -132,21 +103,25 @@ namespace Spirare
             }
 
             var receivedLengthSum = 0;
-            var memory32 = ModuleInstance.Memories[0].Int32;
-            var memory8 = ModuleInstance.Memories[0].Int8;
             try
             {
                 for (uint i = 0; i < iovsLen; i++)
                 {
-                    var start = memory32[iovs + i * 8];
-                    var length = memory32[iovs + i * 8 + 4];
+                    if (!memoryReader.TryRead(iovs + i * 8, out int start))
+                    {
+                        return ErrorResult;
+                    }
+                    if (!memoryReader.TryRead(iovs + i * 8 + 4, out int length))
+                    {
+                        return ErrorResult;
+                    }
 
                     var buffer = new byte[length];
                     var receivedLength = socket.Receive(buffer);
 
-                    for (var j = 0; j < receivedLength; j++)
+                    if (!memoryReader.TryWrite((uint)start, buffer))
                     {
-                        memory8[(uint)(start + j)] = (sbyte)buffer[j];
+                        return ErrorResult;
                     }
 
                     receivedLengthSum += receivedLength;
@@ -159,16 +134,14 @@ namespace Spirare
             }
             finally
             {
-                memory32[roDataLengthPointer] = receivedLengthSum;
-
+                memoryReader.TryWrite(roDataLengthPointer, receivedLengthSum);
             }
 
-            return ReturnValue.FromObject(0);
+            return Success;
         }
 
-        private IReadOnlyList<object> Send(IReadOnlyList<object> arg)
+        public int Send(ArgumentParser parser, MemoryReader memoryReader)
         {
-            var parser = new ArgumentParser(arg, ModuleInstance);
             if (!parser.TryReadInt(out var fd))
             {
                 return Invalid;
@@ -193,12 +166,14 @@ namespace Spirare
                 return Invalid;
             }
 
-
             try
             {
                 var sentMessageLength = socket.Send(buffer);
-                var memory32 = ModuleInstance.Memories[0].Int32;
-                memory32[soDataLengthPointer] = sentMessageLength;
+
+                if (!memoryReader.TryWrite(soDataLengthPointer, sentMessageLength))
+                {
+                    return ErrorResult;
+                }
             }
             catch (Exception e)
             {
@@ -206,7 +181,7 @@ namespace Spirare
                 return ErrorResult;
             }
 
-            return ReturnValue.FromObject(0);
+            return Success;
         }
     }
 }

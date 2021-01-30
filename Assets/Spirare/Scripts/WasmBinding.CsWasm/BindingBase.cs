@@ -11,6 +11,19 @@ namespace Spirare
         public ModuleInstance ModuleInstance { set; get; }
         public PredefinedImporter Importer { private set; get; }
 
+        private MemoryReader memoryReader;
+        protected MemoryReader MemoryReader
+        {
+            get
+            {
+                if (memoryReader == null)
+                {
+                    memoryReader = new MemoryReader(ModuleInstance.Memories[0]);
+                }
+                return memoryReader;
+            }
+        }
+
         protected Element thisElement;
         protected ContentsStore store;
 
