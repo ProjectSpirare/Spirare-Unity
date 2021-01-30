@@ -40,16 +40,6 @@ namespace Spirare
             return importer;
         }
 
-
-        private IReadOnlyList<object> Invalid
-        {
-            get => ReturnValue.FromObject(-1);
-        }
-        private IReadOnlyList<object> ErrorResult
-        {
-            get => ReturnValue.FromObject(1);
-        }
-
         private IReadOnlyList<object> Read(IReadOnlyList<object> arg)
         {
             var parser = new ArgumentParser(arg, ModuleInstance);
