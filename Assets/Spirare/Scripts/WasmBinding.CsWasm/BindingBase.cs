@@ -57,5 +57,19 @@ namespace Spirare
 
             return true;
         }
+
+        protected IReadOnlyList<object> Invoke(IReadOnlyList<object> arg, Action<ArgumentParser> action)
+        {
+            var parser = new ArgumentParser(arg);
+            action.Invoke(parser);
+            return ReturnValue.Unit;
+        }
+
+        protected IReadOnlyList<object> Invoke(IReadOnlyList<object> arg, Func<ArgumentParser, object> func)
+        {
+            var parser = new ArgumentParser(arg);
+            var value = func.Invoke(parser);
+            return ReturnValue.FromObject(value);
+        }
     }
 }

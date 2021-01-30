@@ -5,44 +5,9 @@ using UnityEngine;
 
 namespace Spirare.WasmBinding
 {
-    internal class SpirareBindingBase
+    internal class TransformBinding : SpirareBindingBase
     {
-        protected Element thisElement;
-        protected ContentsStore store;
-
-        public SpirareBindingBase(Element element, ContentsStore store)
-        {
-            thisElement = element;
-            this.store = store;
-        }
-
-
-        protected bool TryGetElementWithArg(ArgumentParser parser, out Element element)
-        {
-            if (!parser.TryReadInt(out var elementIndex))
-            {
-                element = null;
-                return false;
-            }
-
-            if (elementIndex == 0)
-            {
-                element = thisElement;
-                return true;
-            }
-
-            if (!store.TryGetElementByElementIndex(elementIndex, out element))
-            {
-                return false;
-            }
-
-            return true;
-        }
-    }
-
-    internal class TransformBinding1 : SpirareBindingBase
-    {
-        public TransformBinding1(Element element, ContentsStore store) : base(element, store)
+        public TransformBinding(Element element, ContentsStore store) : base(element, store)
         {
 
         }
@@ -90,7 +55,6 @@ namespace Spirare.WasmBinding
             }
         }
 
-
         public void SetScale(ArgumentParser parser, CoordinateType coordinate)
         {
             var directional = false;
@@ -101,6 +65,30 @@ namespace Spirare.WasmBinding
             else
             {
                 SetVector3(parser, SetLocalScale, directional);
+            }
+        }
+
+        public float GetRotation(ArgumentParser parser, QuaternionElementType axis, CoordinateType coordinate)
+        {
+            if (coordinate == CoordinateType.world)
+            {
+                return GetTransformValue(parser, t => t.rotation.GetSpecificValue(axis));
+            }
+            else
+            {
+                return GetTransformValue(parser, t => t.localRotation.GetSpecificValue(axis));
+            }
+        }
+
+        public void SetRotation(ArgumentParser parser, CoordinateType coordinate)
+        {
+            if (coordinate == CoordinateType.world)
+            {
+                SetQuaternion(parser, SetWorldRotation);
+            }
+            else
+            {
+                SetQuaternion(parser, SetLocalRotation);
             }
         }
 
@@ -139,6 +127,16 @@ namespace Spirare.WasmBinding
             transform.localScale = localScale;
         }
 
+        private void SetLocalRotation(Transform transform, Quaternion rotation)
+        {
+            transform.localRotation = rotation;
+        }
+
+        private void SetWorldRotation(Transform transform, Quaternion rotation)
+        {
+            transform.rotation = rotation;
+        }
+
         private float GetTransformValue(ArgumentParser parser, Func<Transform, float> func)
         {
             if (!TryGetElementWithArg(parser, out var element))
@@ -161,6 +159,20 @@ namespace Spirare.WasmBinding
                 return;
             }
             action?.Invoke(element.GameObject.transform, position);
+        }
+
+        private void SetQuaternion(ArgumentParser parser, Action<Transform, Quaternion> action)
+        {
+            if (!TryGetElementWithArg(parser, out var element))
+            {
+                return;
+            }
+
+            if (!parser.TryReadQuaternion(out var rotation))
+            {
+                return;
+            }
+            action?.Invoke(element.GameObject.transform, rotation);
         }
     }
 }

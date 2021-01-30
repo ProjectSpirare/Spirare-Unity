@@ -1,18 +1,17 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
 using Wasm.Interpret;
 
 namespace Spirare.WasmBinding.CsWasm
 {
     public class TransformBinding : BindingBase
     {
-        private readonly TransformBinding1 transformBinding;
+        private readonly WasmBinding.TransformBinding transformBinding;
 
         public TransformBinding(Element element, ContentsStore store) : base(element, store)
         {
-            transformBinding = new TransformBinding1(element, store);
+            transformBinding = new WasmBinding.TransformBinding(element, store);
         }
 
         public override PredefinedImporter GenerateImporter()
@@ -21,6 +20,7 @@ namespace Spirare.WasmBinding.CsWasm
 
             var coordinateValues = Enum.GetValues(typeof(CoordinateType));
             var vector3ElementValues = Enum.GetValues(typeof(Vector3ElementType));
+            var quaternionElementType = Enum.GetValues(typeof(QuaternionElementType));
 
             // Position
             foreach (CoordinateType coordinate in coordinateValues)
@@ -32,7 +32,7 @@ namespace Spirare.WasmBinding.CsWasm
                          new DelegateFunctionDefinition(
                              ValueType.ObjectId,
                              ValueType.Float,
-                             arg => GetPosition(arg, axis, coordinate)
+                             arg => Invoke(arg, parser => GetPosition(parser, axis, coordinate))
                              ));
                 }
 
@@ -40,7 +40,7 @@ namespace Spirare.WasmBinding.CsWasm
                      new DelegateFunctionDefinition(
                          ValueType.IdAndVector3,
                          ValueType.Unit,
-                         arg => SetPosition(arg, coordinate)
+                         arg => Invoke(arg, parser => SetPosition(parser, coordinate))
                          ));
             }
 
@@ -54,7 +54,7 @@ namespace Spirare.WasmBinding.CsWasm
                          new DelegateFunctionDefinition(
                              ValueType.ObjectId,
                              ValueType.Float,
-                             arg => GetScale(arg, axis, coordinate)
+                             arg => Invoke(arg, parser => GetScale(parser, axis, coordinate))
                              ));
                 }
 
@@ -62,121 +62,63 @@ namespace Spirare.WasmBinding.CsWasm
                      new DelegateFunctionDefinition(
                          ValueType.IdAndVector3,
                          ValueType.Unit,
-                         arg => SetScale(arg, coordinate)
+                         arg => Invoke(arg, parser => SetScale(parser, coordinate))
                          ));
             }
 
-            // Local rotation
-            var quaternionElements = Enum.GetValues(typeof(QuaternionElementType));
-            foreach (QuaternionElementType axis in quaternionElements)
+            // Rotation
+            foreach (CoordinateType coordinate in coordinateValues)
             {
-                importer.DefineFunction($"transform_get_local_rotation_{axis}",
+                foreach (QuaternionElementType axis in quaternionElementType)
+                {
+                    var functionName = $"transform_get_{coordinate}_rotation_{axis}";
+                    importer.DefineFunction(functionName,
+                         new DelegateFunctionDefinition(
+                             ValueType.ObjectId,
+                             ValueType.Float,
+                             arg => Invoke(arg, parser => GetRotation(parser, axis, coordinate))
+                             ));
+                }
+
+                importer.DefineFunction($"transform_set_{coordinate}_rotation",
                      new DelegateFunctionDefinition(
-                         ValueType.ObjectId,
-                         ValueType.Float,
-                         arg => GetTransformValue(arg, t => t.localRotation.GetSpecificValue(axis))
+                         ValueType.IdAndQuaternion,
+                         ValueType.Unit,
+                         arg => Invoke(arg, parser => SetRotation(parser, coordinate))
                          ));
             }
 
-            importer.DefineFunction("transform_set_local_rotation",
-                 new DelegateFunctionDefinition(
-                     ValueType.IdAndQuaternion,
-                     ValueType.Unit,
-                     SetLocalRotation
-                     ));
-
-            // World rotation
-            foreach (QuaternionElementType axis in quaternionElements)
-            {
-                importer.DefineFunction($"transform_get_world_rotation_{axis}",
-                     new DelegateFunctionDefinition(
-                         ValueType.ObjectId,
-                         ValueType.Float,
-                         arg => GetTransformValue(arg, t => t.rotation.GetSpecificValue(axis))
-                         ));
-            }
-
-            importer.DefineFunction("transform_set_world_rotation",
-                 new DelegateFunctionDefinition(
-                     ValueType.IdAndQuaternion,
-                     ValueType.Unit,
-                     SetWorldRotation
-                     ));
             return importer;
         }
 
-        private IReadOnlyList<object> GetPosition(IReadOnlyList<object> arg, Vector3ElementType axis, CoordinateType coordinate)
+        private object GetPosition(ArgumentParser parser, Vector3ElementType axis, CoordinateType coordinate)
         {
-            var parser = new ArgumentParser(arg);
-            var value = transformBinding.GetPosition(parser, axis, coordinate);
-            return ReturnValue.FromObject(value);
+            return transformBinding.GetPosition(parser, axis, coordinate);
         }
 
-        private IReadOnlyList<object> SetPosition(IReadOnlyList<object> arg, CoordinateType coordinate)
+        private void SetPosition(ArgumentParser parser, CoordinateType coordinate)
         {
-            var parser = new ArgumentParser(arg);
             transformBinding.SetPosition(parser, coordinate);
-            return ReturnValue.Unit;
         }
 
-        private IReadOnlyList<object> GetScale(IReadOnlyList<object> arg, Vector3ElementType axis, CoordinateType coordinate)
+        private object GetScale(ArgumentParser parser, Vector3ElementType axis, CoordinateType coordinate)
         {
-            var parser = new ArgumentParser(arg);
-            var value = transformBinding.GetScale(parser, axis, coordinate);
-            return ReturnValue.FromObject(value);
+            return transformBinding.GetScale(parser, axis, coordinate);
         }
 
-        private IReadOnlyList<object> SetScale(IReadOnlyList<object> arg, CoordinateType coordinate)
+        private void SetScale(ArgumentParser parser, CoordinateType coordinate)
         {
-            var parser = new ArgumentParser(arg);
             transformBinding.SetScale(parser, coordinate);
-            return ReturnValue.Unit;
         }
 
-
-        private IReadOnlyList<object> InvalidFloatValue
+        private object GetRotation(ArgumentParser parser, QuaternionElementType axis, CoordinateType coordinate)
         {
-            get => ReturnValue.FromObject(float.NaN);
+            return transformBinding.GetRotation(parser, axis, coordinate);
         }
 
-        private IReadOnlyList<object> GetTransformValue(IReadOnlyList<object> arg, Func<Transform, float> func)
+        private void SetRotation(ArgumentParser parser, CoordinateType coordinate)
         {
-            var parser = new ArgumentParser(arg);
-
-            if (!TryGetElementWithArg(parser, store, out var element))
-            {
-                return InvalidFloatValue;
-            }
-            var value = func.Invoke(element.GameObject.transform);
-            return ReturnValue.FromObject(value);
+            transformBinding.SetRotation(parser, coordinate);
         }
-
-
-        private IReadOnlyList<object> SetQuaternion(IReadOnlyList<object> arg, Action<Transform, Quaternion> action)
-        {
-            var parser = new ArgumentParser(arg);
-            if (!TryGetElementWithArg(parser, store, out var element))
-            {
-                return ReturnValue.Unit;
-            }
-
-            if (!parser.TryReadQuaternion(out var quaternion))
-            {
-                return ReturnValue.Unit;
-            }
-            action?.Invoke(element.GameObject.transform, quaternion);
-            return ReturnValue.Unit;
-        }
-
-        private IReadOnlyList<object> SetLocalRotation(IReadOnlyList<object> arg)
-        {
-            return SetQuaternion(arg, (t, q) => t.localRotation = q);
-        }
-
-        private IReadOnlyList<object> SetWorldRotation(IReadOnlyList<object> arg)
-        {
-            return SetQuaternion(arg, (t, q) => t.rotation = q);
-        }
-
     }
 }
