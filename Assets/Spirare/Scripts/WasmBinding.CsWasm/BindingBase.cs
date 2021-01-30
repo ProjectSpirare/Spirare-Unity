@@ -57,72 +57,19 @@ namespace Spirare
 
             return true;
         }
-    }
 
-    internal enum Vector3ElementType
-    {
-        x,
-        y,
-        z
-    }
-
-    internal static class Vector3Extension
-    {
-        public static float GetSpecificValue(this Vector3 vector3, Vector3ElementType element,
-            bool toSpirareCoorinates = true,
-            bool directional = true)
+        protected IReadOnlyList<object> Invoke(IReadOnlyList<object> arg, Action<ArgumentParser> action)
         {
-            var vector = toSpirareCoorinates ? vector3.ToSpirareCoordinate(directional) : vector3;
-
-            switch (element)
-            {
-                case Vector3ElementType.x:
-                    return vector.x;
-                case Vector3ElementType.y:
-                    return vector.y;
-                case Vector3ElementType.z:
-                    return vector.z;
-                default:
-                    return float.NaN;
-            }
+            var parser = new ArgumentParser(arg);
+            action.Invoke(parser);
+            return ReturnValue.Unit;
         }
 
-        private static Vector3 ToSpirareCoordinate(this Vector3 vector3, bool directional = true)
+        protected IReadOnlyList<object> Invoke(IReadOnlyList<object> arg, Func<ArgumentParser, object> func)
         {
-            return CoordinateUtility.ToSpirareCoordinate(vector3, directional);
-        }
-    }
-
-    internal enum QuaternionElementType
-    {
-        x,
-        y,
-        z,
-        w
-    }
-
-    internal static class QuaternionExtension
-    {
-        public static float GetSpecificValue(this Quaternion quaternion, QuaternionElementType element, bool toSpirareCoordinate = true)
-        {
-            var rotation = toSpirareCoordinate ? quaternion.ToSpirareCoordinate() : quaternion;
-            switch (element)
-            {
-                case QuaternionElementType.x:
-                    return rotation.x;
-                case QuaternionElementType.y:
-                    return rotation.y;
-                case QuaternionElementType.z:
-                    return rotation.z;
-                case QuaternionElementType.w:
-                    return rotation.w;
-                default:
-                    return float.NaN;
-            }
-        }
-        private static Quaternion ToSpirareCoordinate(this Quaternion rotation)
-        {
-            return CoordinateUtility.ToSpirareCoordinate(rotation);
+            var parser = new ArgumentParser(arg);
+            var value = func.Invoke(parser);
+            return ReturnValue.FromObject(value);
         }
     }
 }

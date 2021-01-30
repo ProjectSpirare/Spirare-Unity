@@ -205,7 +205,5 @@ namespace Spirare
         {
             onUnequipFunction?.Invoke(ReturnValue.Unit);
         }
-
-
     }
 }
