@@ -3,11 +3,12 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
+using System.Text;
 using UnityEngine;
 
 namespace Spirare.WasmBinding
 {
-    public class SocketBinding1
+    internal class FileDescriptorBinding
     {
         private readonly Dictionary<int, Socket> sockets = new Dictionary<int, Socket>();
 
@@ -24,6 +25,79 @@ namespace Spirare.WasmBinding
             get => 1;
         }
 
+
+        public int Read(ArgumentParser parser, MemoryReader memoryReader)
+        {
+            throw new NotImplementedException();
+        }
+
+        public int Write(ArgumentParser parser, MemoryReader memoryReader)
+        {
+            if (!parser.TryReadInt(out int fd))
+            {
+                return ErrorResult;
+            }
+            if (!parser.TryReadVectoredBuffer(out byte[] buffer))
+            {
+                return ErrorResult;
+            }
+            if (!parser.TryReadUInt(out uint nwritten))
+            {
+                return ErrorResult;
+            }
+
+            try
+            {
+                Debug.Log(fd);
+                var text = Encoding.UTF8.GetString(buffer);
+
+                if (fd == 1)
+                {
+                    Debug.Log(text);
+                }
+                else if (fd == 2)
+                {
+                    Debug.LogError(text);
+                }
+
+                if (!memoryReader.TryWrite(nwritten, buffer.Length))
+                {
+                    return ErrorResult;
+                }
+                return Success;
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning(e);
+                return ErrorResult;
+            }
+        }
+
+        public int Close(ArgumentParser parser, MemoryReader memoryReader)
+        {
+            if (!parser.TryReadInt(out var fd))
+            {
+                return Invalid;
+            }
+
+            if (!sockets.TryGetValue(fd, out var socket))
+            {
+                return Invalid;
+            }
+            try
+            {
+                socket.Dispose();
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning(e);
+            }
+
+            sockets.Remove(fd);
+            return Success;
+        }
+
+        #region Socket methods
         public int Connect(ArgumentParser parser, MemoryReader memoryReader)
         {
             if (!parser.TryReadInt(out var ipv4Addr))
@@ -183,5 +257,6 @@ namespace Spirare.WasmBinding
 
             return Success;
         }
+        #endregion
     }
 }

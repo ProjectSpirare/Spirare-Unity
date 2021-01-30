@@ -141,9 +141,6 @@ namespace Spirare
             var fileDescriptorBinding = new FileDescriptorBinding(element, store);
             importer.IncludeDefinitions(fileDescriptorBinding.Importer);
 
-            var socketBinding = new SocketBinding(element, store);
-            importer.IncludeDefinitions(socketBinding.Importer);
-
             var debugBinding = new DebugBinding(element, store);
             importer.IncludeDefinitions(debugBinding.Importer);
 
@@ -165,7 +162,6 @@ namespace Spirare
 
                 argsBinding.ModuleInstance = module;
                 fileDescriptorBinding.ModuleInstance = module;
-                socketBinding.ModuleInstance = module;
 
                 gameObjectBinding.ModuleInstance = module;
                 debugBinding.ModuleInstance = module;
