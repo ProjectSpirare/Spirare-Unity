@@ -81,6 +81,8 @@ namespace Spirare
                     return PomlElementType.Primitive;
                 case "model":
                     return PomlElementType.Model;
+                case "text":
+                    return PomlElementType.Text;
                 case "script":
                     return PomlElementType.Script;
                 case "#comment":
@@ -185,6 +187,8 @@ namespace Spirare
                     return InitPrimitiveElement(node, basePath);
                 case PomlElementType.Script:
                     return InitScriptElement(node, basePath);
+                case PomlElementType.Text:
+                    return InitTextElement(node);
                 default:
                     var pomlElement = new PomlElement(elementType);
                     return pomlElement;
@@ -218,6 +222,16 @@ namespace Spirare
             return new PomlPrimitiveElement()
             {
                 PrimitiveType = primitiveType
+            };
+        }
+
+        private PomlElement InitTextElement(XmlNode node)
+        {
+            var text = node.GetAttribute("text");
+
+            return new PomlTextElement()
+            {
+                Text = text
             };
         }
 

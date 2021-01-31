@@ -152,18 +152,25 @@ namespace Spirare
                     {
                         return InstantiatePrimitive(primitiveElement);
                     }
-                    return null;
+                    break;
                 case PomlElementType.Model:
                     return InstantiateModel(element);
+                case PomlElementType.Text:
+                    if (element is PomlTextElement textElement)
+                    {
+                        return InstantiateText(textElement);
+                    }
+                    break;
                 case PomlElementType.Script:
                     if (element is PomlScriptElement scriptElement)
                     {
                         AttachScript(scriptElement, parent);
                     }
-                    return null;
+                    break;
                 default:
-                    return null;
+                    break;
             }
+            return null;
         }
 
         protected virtual Transform InstantiateEmptyElement(PomlElement element)
@@ -191,6 +198,14 @@ namespace Spirare
             var gltf = go.AddComponent<GltfEntity>();
             var srcPath = element.Src;
             gltf.Load(srcPath);
+            return go.transform;
+        }
+
+        protected virtual Transform InstantiateText(PomlTextElement element)
+        {
+            var go = new GameObject();
+            var textElementComponent = go.AddComponent<TextElementComponent>();
+            textElementComponent.SetText(element.Text);
             return go.transform;
         }
 
