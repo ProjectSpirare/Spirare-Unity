@@ -5,7 +5,7 @@ using System.Text;
 using UnityEngine;
 using Wasm.Interpret;
 
-namespace Spirare
+namespace Spirare.WasmBinding
 {
     public class ArgumentParser
     {
@@ -59,7 +59,7 @@ namespace Spirare
             try
             {
                 var intValue = (int)valueObject;
-                value = InterpretAsUint(intValue);
+                value = BindingUtility.InterpretAsUint(intValue);
                 return true;
             }
             catch (Exception e)
@@ -241,32 +241,6 @@ namespace Spirare
 
             quaternion = Quaternion.identity;
             return false;
-        }
-
-        public static uint InterpretAsUint(int value)
-        {
-            try
-            {
-                var bytes = BitConverter.GetBytes(value);
-                return BitConverter.ToUInt32(bytes, 0);
-            }
-            catch (Exception)
-            {
-                return 0;
-            }
-        }
-
-        public static int InterpretAsInt(uint value)
-        {
-            try
-            {
-                var bytes = BitConverter.GetBytes(value);
-                return BitConverter.ToInt32(bytes, 0);
-            }
-            catch (Exception)
-            {
-                return 0;
-            }
         }
 
         private bool TryReadObject(out object value)

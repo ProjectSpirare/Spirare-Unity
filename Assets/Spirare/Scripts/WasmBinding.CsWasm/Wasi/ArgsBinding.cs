@@ -86,7 +86,7 @@ namespace Spirare.WasmBinding.CsWasm
 
             foreach (var env in envs)
             {
-                memory32[argvOffset] = ArgumentParser.InterpretAsInt(argvBufferOffset);
+                memory32[argvOffset] = BindingUtility.InterpretAsInt(argvBufferOffset);
                 argvOffset += 4;
 
                 argvBufferOffset = WriteStringToMemory(Memory8, env, argvBufferOffset);

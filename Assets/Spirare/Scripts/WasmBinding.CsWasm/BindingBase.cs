@@ -5,7 +5,7 @@ using System.Threading;
 using UnityEngine;
 using Wasm.Interpret;
 
-namespace Spirare
+namespace Spirare.WasmBinding.CsWasm
 {
     public abstract class BindingBase
     {
