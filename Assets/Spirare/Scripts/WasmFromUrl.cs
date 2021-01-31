@@ -10,8 +10,9 @@ namespace Spirare
         [SerializeField]
         private string url = null;
 
-        private void Awake()
+        protected override void Awake()
         {
+            base.Awake();
             if (!string.IsNullOrEmpty(url))
             {
                 _ = LoadWasmFromUrl(url);

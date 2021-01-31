@@ -3,6 +3,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
 using Wasm;
@@ -20,6 +21,16 @@ namespace Spirare
 
     public class WasmBehaviour : MonoBehaviour
     {
+        private enum WasmEventType
+        {
+            Start = 0,
+            Update,
+            OnEquip,
+            OnUnequip,
+            OnUse,
+            OnSelect
+        }
+
         private ModuleInstance module;
         private FunctionDefinition startFunction;
         private FunctionDefinition updateFunction;
@@ -28,30 +39,67 @@ namespace Spirare
         private FunctionDefinition onUseFunction;
         private FunctionDefinition onSelectFunction;
 
+        private Queue<WasmEventType> eventQueue = new Queue<WasmEventType>();
+
+        private SynchronizationContext context;
+        private Thread mainThread;
+
+        private bool updateCalled = false;
+
+        protected virtual void Awake()
+        {
+            context = SynchronizationContext.Current;
+            mainThread = Thread.CurrentThread;
+        }
+
         protected virtual void Start()
         {
-            startFunction?.Invoke(ReturnValue.Unit);
+            eventQueue.Enqueue(WasmEventType.Start);
+            _ = EventLoop();
         }
 
         protected virtual void Update()
         {
-            updateFunction?.Invoke(ReturnValue.Unit);
+            updateCalled = true;
         }
 
-        public void InvokeEvent(WasmEventType eventType)
+        private async Task EventLoop()
+        {
+            while (Application.isPlaying)
+            {
+                await Task.Run(async () =>
+                {
+                    while (eventQueue.Count > 0)
+                    {
+                        var wasmEvent = eventQueue.Dequeue();
+                        InvokeEvent(wasmEvent);
+                    }
+
+                    if (updateCalled)
+                    {
+                        updateCalled = false;
+                        InvokeEvent(WasmEventType.Update);
+                    }
+
+                    await Task.Delay(10);
+                });
+            }
+        }
+
+        public void InvokeEvent(Spirare.WasmEventType eventType)
         {
             switch (eventType)
             {
-                case WasmEventType.Select:
+                case Spirare.WasmEventType.Select:
                     InvokeOnSelect();
                     break;
-                case WasmEventType.Equip:
+                case Spirare.WasmEventType.Equip:
                     InvokeOnEquip();
                     break;
-                case WasmEventType.Unequip:
+                case Spirare.WasmEventType.Unequip:
                     InvokeOnUnequip();
                     break;
-                case WasmEventType.Use:
+                case Spirare.WasmEventType.Use:
                     InvokeOnUse();
                     break;
                 default:
@@ -83,15 +131,9 @@ namespace Spirare
             var wasiFunctions = new List<string>()
             {
                 //"proc_exit",
-                //"fd_read",
-                //"fd_write",
-                //"fd_close",
                 "fd_prestat_get",
                 "fd_prestat_dir_name",
-                //"environ_sizes_get",
-                //"environ_get",
                 // "random_get",
-                //"env.abort",
                 "abort",
             };
 
@@ -144,13 +186,13 @@ namespace Spirare
             var debugBinding = new DebugBinding(element, store);
             importer.IncludeDefinitions(debugBinding.Importer);
 
-            var gameObjectBinding = new GameObjectBinding(element, store);
+            var gameObjectBinding = new GameObjectBinding(element, store, context, mainThread);
             importer.IncludeDefinitions(gameObjectBinding.Importer);
 
-            var transformBinding = new TransformBinding(element, store);
+            var transformBinding = new TransformBinding(element, store, context, mainThread);
             importer.IncludeDefinitions(transformBinding.Importer);
 
-            var physicsBinding = new PhysicsBinding(element, store);
+            var physicsBinding = new PhysicsBinding(element, store, context, mainThread);
             importer.IncludeDefinitions(physicsBinding.Importer);
 
             var timeBinding = new TimeBinding(element, store);
@@ -188,22 +230,48 @@ namespace Spirare
 
         private void InvokeOnSelect()
         {
-            onSelectFunction?.Invoke(ReturnValue.Unit);
+            eventQueue.Enqueue(WasmEventType.OnSelect);
         }
 
         private void InvokeOnUse()
         {
-            onUseFunction?.Invoke(ReturnValue.Unit);
+            eventQueue.Enqueue(WasmEventType.OnUse);
         }
 
         private void InvokeOnEquip()
         {
-            onEquipFunction?.Invoke(ReturnValue.Unit);
+            eventQueue.Enqueue(WasmEventType.OnEquip);
         }
 
         private void InvokeOnUnequip()
         {
-            onUnequipFunction?.Invoke(ReturnValue.Unit);
+            eventQueue.Enqueue(WasmEventType.OnUnequip);
+        }
+
+        private void InvokeEvent(WasmEventType eventType)
+        {
+            switch (eventType)
+            {
+                case WasmEventType.Start:
+                    startFunction?.Invoke(ReturnValue.Unit);
+                    break;
+                case WasmEventType.Update:
+                    updateFunction?.Invoke(ReturnValue.Unit);
+                    break;
+                case WasmEventType.OnSelect:
+                    onSelectFunction?.Invoke(ReturnValue.Unit);
+                    break;
+                case WasmEventType.OnEquip:
+                    onEquipFunction?.Invoke(ReturnValue.Unit);
+                    break;
+                case WasmEventType.OnUnequip:
+                    onUnequipFunction?.Invoke(ReturnValue.Unit);
+                    break;
+                case WasmEventType.OnUse:
+                    onUseFunction?.Invoke(ReturnValue.Unit);
+                    break;
+            }
         }
     }
 }
+

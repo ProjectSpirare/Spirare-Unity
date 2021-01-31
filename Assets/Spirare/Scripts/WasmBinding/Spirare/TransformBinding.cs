@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading;
 using UnityEngine;
 
 namespace Spirare.WasmBinding
 {
     internal class TransformBinding : SpirareBindingBase
     {
-        public TransformBinding(Element element, ContentsStore store) : base(element, store)
+        public TransformBinding(Element element, ContentsStore store, SynchronizationContext context, Thread mainThread) : base(element, store, context, mainThread)
         {
 
         }
@@ -143,8 +144,18 @@ namespace Spirare.WasmBinding
             {
                 return InvalidFloatValue;
             }
-            var value = func.Invoke(element.GameObject.transform);
-            return value;
+            try
+            {
+                return RunOnUnityThread(() =>
+                {
+                    return func.Invoke(element.GameObject.transform);
+                });
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(e);
+                return 0;
+            }
         }
 
         private void SetVector3(ArgumentParser parser, Action<Transform, Vector3> action, bool directional = true)
@@ -158,7 +169,11 @@ namespace Spirare.WasmBinding
             {
                 return;
             }
-            action?.Invoke(element.GameObject.transform, position);
+
+            RunOnUnityThread(() =>
+            {
+                action.Invoke(element.GameObject.transform, position);
+            });
         }
 
         private void SetQuaternion(ArgumentParser parser, Action<Transform, Quaternion> action)
@@ -172,7 +187,11 @@ namespace Spirare.WasmBinding
             {
                 return;
             }
-            action?.Invoke(element.GameObject.transform, rotation);
+
+            RunOnUnityThread(() =>
+            {
+                action.Invoke(element.GameObject.transform, rotation);
+            });
         }
     }
 }

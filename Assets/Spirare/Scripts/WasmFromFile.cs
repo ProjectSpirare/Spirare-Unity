@@ -7,8 +7,9 @@ namespace Spirare
         [SerializeField]
         private string filePath = null;
 
-        private void Awake()
+        protected override void Awake()
         {
+            base.Awake();
             LoadWasm(filePath);
         }
     }
