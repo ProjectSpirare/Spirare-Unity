@@ -48,7 +48,6 @@ namespace Spirare.WasmBinding
 
             try
             {
-                Debug.Log(fd);
                 var text = Encoding.UTF8.GetString(buffer);
 
                 if (fd == 1)

@@ -1,79 +1,77 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using Wasm.Interpret;
 
-namespace Spirare.WasmBinding.CsWasm
+namespace Spirare.WasmBinding
 {
-    public class ArgsBinding : BindingBase
+    internal class WasmBindingBase
     {
-        private readonly WasmBinding.ArgsBinding argsBinding;
 
+    }
+
+    internal class ArgsBinding : WasmBindingBase
+    {
         private readonly List<string> args;
         private readonly List<string> envs;
 
         private int Argc => args.Count;
 
-        private LinearMemoryAsInt8 Memory8 => ModuleInstance.Memories[0].Int8;
-        private LinearMemoryAsInt32 Memory32 => ModuleInstance.Memories[0].Int32;
+        private static readonly int Success = 0;
+        private static readonly int Error = 1;
 
-        public ArgsBinding(Element element, ContentsStore store, List<string> args, List<string> envs) : base(element, store)
+        public ArgsBinding(List<string> args, List<string> envs)
         {
             this.args = args;
             this.envs = envs;
-            argsBinding = new WasmBinding.ArgsBinding(args, envs);
         }
 
-        public override PredefinedImporter GenerateImporter()
+        public int ArgsGet(ArgumentParser parser, MemoryReader memoryReader)
         {
-            var importer = new PredefinedImporter();
+            if (!parser.TryReadPointer(out uint argvOffset, out uint argvBufferOffset))
+            {
+                return Error;
+            }
 
-            importer.DefineFunction("args_get",
-                 new DelegateFunctionDefinition(
-                     ValueType.PointerAndPointer,
-                     ValueType.Short,
-                     ArgsGet
-                     ));
-            importer.DefineFunction("args_sizes_get",
-                 new DelegateFunctionDefinition(
-                     ValueType.PointerAndPointer,
-                     ValueType.Short,
-                     ArgsSizesGet
-                     ));
-            importer.DefineFunction("environ_get",
-                 new DelegateFunctionDefinition(
-                     ValueType.PointerAndPointer,
-                     ValueType.Short,
-                     EnvironGet
-                     ));
-            importer.DefineFunction("environ_sizes_get",
-                 new DelegateFunctionDefinition(
-                     ValueType.PointerAndPointer,
-                     ValueType.Short,
-                     EnvironSizesGet
-                     ));
-            return importer;
+            foreach (var argString in args)
+            {
+                if (!memoryReader.TryWrite(argvOffset, BindingUtility.InterpretAsInt(argvBufferOffset)))
+                {
+                    return Error;
+                }
+                argvOffset += 4;
+
+                if (!memoryReader.TryWriteString(argString, ref argvBufferOffset))
+                {
+                    return Error;
+                }
+            }
+
+            return Success;
         }
 
-        private IReadOnlyList<object> ErrorResult
+        public int ArgsSizesGet(ArgumentParser parser, MemoryReader memoryReader)
         {
-            get => ReturnValue.FromObject(0);
+            if (!parser.TryReadPointer(out uint argvOffset, out uint argvBufferOffset))
+            {
+                return Error;
+            }
+
+            var dataSize = 0;
+            foreach (var argString in args)
+            {
+                var bytes = System.Text.Encoding.UTF8.GetBytes(argString);
+                dataSize += bytes.Length + 1;
+            }
+
+            if (!memoryReader.TryWrite(argvOffset, Argc) ||
+                 !memoryReader.TryWrite(argvBufferOffset, dataSize))
+            {
+                return Error;
+            }
+            return Success;
         }
 
-        private IReadOnlyList<object> SuccessResult
-        {
-            get => ReturnValue.FromObject(0);
-        }
-
-        private IReadOnlyList<object> ArgsGet(IReadOnlyList<object> arg)
-        {
-            return Invoke(arg, argsBinding.ArgsGet);
-        }
-
-        private IReadOnlyList<object> ArgsSizesGet(IReadOnlyList<object> arg)
-        {
-            return Invoke(arg, argsBinding.ArgsSizesGet);
-        }
+        /*
 
         private IReadOnlyList<object> EnvironGet(IReadOnlyList<object> arg)
         {
@@ -136,5 +134,6 @@ namespace Spirare.WasmBinding.CsWasm
             }
             return offset;
         }
+        */
     }
 }

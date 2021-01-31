@@ -177,7 +177,8 @@ namespace Spirare
             var scriptName = "";
             args.Insert(0, scriptName);
 
-            var argsBinding = new ArgsBinding(element, store, args, null);
+            var envs = new List<string>();
+            var argsBinding = new ArgsBinding(element, store, args, envs);
             importer.IncludeDefinitions(argsBinding.Importer);
 
             var fileDescriptorBinding = new FileDescriptorBinding(element, store);
