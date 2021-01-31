@@ -37,6 +37,7 @@ namespace Spirare
             Element,
             Primitive,
             Model,
+            Text,
             Script
         }
 
@@ -72,6 +73,14 @@ namespace Spirare
 
         public PomlPrimitiveElement() : base(PomlElementType.Primitive) { }
     }
+
+    public class PomlTextElement : PomlElement
+    {
+        public string Text = "";
+
+        public PomlTextElement() : base(PomlElementType.Text) { }
+    }
+
 
     public class PomlScriptElement : PomlElement
     {
