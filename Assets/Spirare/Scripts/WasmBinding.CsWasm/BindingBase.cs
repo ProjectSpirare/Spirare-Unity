@@ -5,7 +5,7 @@ using System.Threading;
 using UnityEngine;
 using Wasm.Interpret;
 
-namespace Spirare
+namespace Spirare.WasmBinding.CsWasm
 {
     public abstract class BindingBase
     {
@@ -74,10 +74,17 @@ namespace Spirare
             return ReturnValue.Unit;
         }
 
-        protected IReadOnlyList<object> Invoke(IReadOnlyList<object> arg, Func<ArgumentParser, object> func)
+        protected IReadOnlyList<object> Invoke<T>(IReadOnlyList<object> arg, Func<ArgumentParser, T> func)
         {
             var parser = new ArgumentParser(arg, ModuleInstance);
             var value = func.Invoke(parser);
+            return ReturnValue.FromObject(value);
+        }
+
+        protected IReadOnlyList<object> Invoke<T>(IReadOnlyList<object> arg, Func<ArgumentParser, MemoryReader, T> func)
+        {
+            var parser = new ArgumentParser(arg, ModuleInstance);
+            var value = func.Invoke(parser, MemoryReader);
             return ReturnValue.FromObject(value);
         }
     }

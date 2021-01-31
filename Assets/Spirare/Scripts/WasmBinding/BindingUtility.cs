@@ -1,80 +1,35 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
 
 namespace Spirare.WasmBinding
 {
-    internal enum CoordinateType
+    internal static class BindingUtility
     {
-        world = 0,
-        local
-    }
-
-    internal enum Vector3ElementType
-    {
-        x = 0,
-        y,
-        z
-    }
-
-    internal static class Vector3Extension
-    {
-        public static float GetSpecificValue(this Vector3 vector3, Vector3ElementType element,
-            bool toSpirareCoorinates = true,
-            bool directional = true)
+        public static uint InterpretAsUint(int value)
         {
-            var vector = toSpirareCoorinates ? vector3.ToSpirareCoordinate(directional) : vector3;
-
-            switch (element)
+            try
             {
-                case Vector3ElementType.x:
-                    return vector.x;
-                case Vector3ElementType.y:
-                    return vector.y;
-                case Vector3ElementType.z:
-                    return vector.z;
-                default:
-                    return float.NaN;
+                var bytes = BitConverter.GetBytes(value);
+                return BitConverter.ToUInt32(bytes, 0);
+            }
+            catch (Exception)
+            {
+                return 0;
             }
         }
 
-        private static Vector3 ToSpirareCoordinate(this Vector3 vector3, bool directional = true)
+        public static int InterpretAsInt(uint value)
         {
-            return CoordinateUtility.ToSpirareCoordinate(vector3, directional);
-        }
-    }
-
-    internal enum QuaternionElementType
-    {
-        x = 0,
-        y,
-        z,
-        w
-    }
-
-    internal static class QuaternionExtension
-    {
-        public static float GetSpecificValue(this Quaternion quaternion, QuaternionElementType element, bool toSpirareCoordinate = true)
-        {
-            var rotation = toSpirareCoordinate ? quaternion.ToSpirareCoordinate() : quaternion;
-            switch (element)
+            try
             {
-                case QuaternionElementType.x:
-                    return rotation.x;
-                case QuaternionElementType.y:
-                    return rotation.y;
-                case QuaternionElementType.z:
-                    return rotation.z;
-                case QuaternionElementType.w:
-                    return rotation.w;
-                default:
-                    return float.NaN;
+                var bytes = BitConverter.GetBytes(value);
+                return BitConverter.ToInt32(bytes, 0);
             }
-        }
-        private static Quaternion ToSpirareCoordinate(this Quaternion rotation)
-        {
-            return CoordinateUtility.ToSpirareCoordinate(rotation);
+            catch (Exception)
+            {
+                return 0;
+            }
         }
     }
 }

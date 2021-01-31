@@ -73,5 +73,31 @@ namespace Spirare
                 return false;
             }
         }
+
+        internal bool TryWriteString(string text, ref uint offset)
+        {
+            try
+            {
+                var bytes = System.Text.Encoding.UTF8.GetBytes(text);
+                if (!TryWrite(offset, bytes))
+                {
+                    return false;
+                }
+                offset += (uint)bytes.Length;
+
+                var nullBytes = new byte[] { 0 };
+                if (!TryWrite(offset, nullBytes))
+                {
+                    return false;
+                }
+                offset += (uint)nullBytes.Length;
+                return true;
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning(e);
+                return false;
+            }
+        }
     }
 }

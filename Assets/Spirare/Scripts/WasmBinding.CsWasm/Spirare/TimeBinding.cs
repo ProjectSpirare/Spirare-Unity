@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Wasm.Interpret;
 
-namespace Spirare
+namespace Spirare.WasmBinding.CsWasm
 {
     public class TimeBinding : BindingBase
     {
