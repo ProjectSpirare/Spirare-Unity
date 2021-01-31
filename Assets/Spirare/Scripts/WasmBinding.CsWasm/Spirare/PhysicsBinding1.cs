@@ -14,28 +14,6 @@ namespace Spirare.WasmBinding
         {
         }
 
-        /*
-        public PhysicsBinding(Element element, ContentsStore store) : base(element, store)
-        {
-        }
-        */
-
-
-        /*
-        public override PredefinedImporter GenerateImporter()
-        {
-            var importer = new PredefinedImporter();
-
-            importer.DefineFunction("physics_set_world_velocity",
-                new DelegateFunctionDefinition(
-                ValueType.IdAndVector3,
-                ValueType.Unit,
-                SetWorldVelocity
-            ));
-            return importer;
-        }
-        */
-
         public void SetWorldVelocity(ArgumentParser parser)
         {
             if (!TryGetElementWithArg(parser, out var element))
@@ -73,7 +51,6 @@ namespace Spirare.WasmBinding
 
                 rigidbodyDictionary[elementIndex] = rigidbody;
             }
-            // rigidbody = null;
 
             return true;
         }
