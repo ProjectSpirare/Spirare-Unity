@@ -70,7 +70,7 @@ namespace Spirare.WasmBinding
                 action.Invoke();
             }
 
-            context.Post(_ =>
+            context.Send(_ =>
             {
                 action.Invoke();
             }, null);

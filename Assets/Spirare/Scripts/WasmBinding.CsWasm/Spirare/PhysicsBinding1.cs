@@ -1,21 +1,27 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
-using Wasm.Interpret;
+using UnityEngine;
 
-namespace Spirare.WasmBinding.CsWasm
+namespace Spirare.WasmBinding
 {
-    public class PhysicsBinding : BindingBase
+    internal class PhysicsBinding : SpirareBindingBase
     {
-        // private Dictionary<int, Rigidbody> rigidbodyDictionary = new Dictionary<int, Rigidbody>();
-        private readonly WasmBinding.PhysicsBinding physicsBinding;
+        private Dictionary<int, Rigidbody> rigidbodyDictionary = new Dictionary<int, Rigidbody>();
 
         public PhysicsBinding(Element element, ContentsStore store, SynchronizationContext context, Thread mainThread)
             : base(element, store, context, mainThread)
         {
-            physicsBinding = new WasmBinding.PhysicsBinding(element, store, context, mainThread);
         }
 
+        /*
+        public PhysicsBinding(Element element, ContentsStore store) : base(element, store)
+        {
+        }
+        */
+
+
+        /*
         public override PredefinedImporter GenerateImporter()
         {
             var importer = new PredefinedImporter();
@@ -24,39 +30,32 @@ namespace Spirare.WasmBinding.CsWasm
                 new DelegateFunctionDefinition(
                 ValueType.IdAndVector3,
                 ValueType.Unit,
-                arg => Invoke(arg, SetWorldVelocity)
-                // SetWorldVelocity
+                SetWorldVelocity
             ));
             return importer;
         }
+        */
 
-        private void SetWorldVelocity(ArgumentParser parser)
+        public void SetWorldVelocity(ArgumentParser parser)
         {
-            physicsBinding.SetWorldVelocity(parser);
-        }
-
-        /*
-        private IReadOnlyList<object> SetWorldVelocity(IReadOnlyList<object> arg)
-        {
-            var parser = new ArgumentParser(arg);
-            if (!TryGetElementWithArg(parser, store, out var element))
+            if (!TryGetElementWithArg(parser, out var element))
             {
-                return ReturnValue.Unit;
+                return;
             }
 
             if (!parser.TryReadVector3(out var velocity))
             {
-                return ReturnValue.Unit;
+                return;
             }
-
-            if (!TryGetRigidbody(element, out var rigidbody))
+            RunOnUnityThread(() =>
             {
-                return SpirareUtils.Unit;
-            }
+                if (!TryGetRigidbody(element, out var rigidbody))
+                {
+                    return;
+                }
 
-            rigidbody.velocity = velocity;
-
-            return SpirareUtils.Unit;
+                rigidbody.velocity = velocity;
+            });
         }
 
         private bool TryGetRigidbody(Element element, out Rigidbody rigidbody)
@@ -78,6 +77,5 @@ namespace Spirare.WasmBinding.CsWasm
 
             return true;
         }
-        */
     }
 }

@@ -186,13 +186,13 @@ namespace Spirare
             var debugBinding = new DebugBinding(element, store);
             importer.IncludeDefinitions(debugBinding.Importer);
 
-            var gameObjectBinding = new GameObjectBinding(element, store);
+            var gameObjectBinding = new GameObjectBinding(element, store, context, mainThread);
             importer.IncludeDefinitions(gameObjectBinding.Importer);
 
             var transformBinding = new TransformBinding(element, store, context, mainThread);
             importer.IncludeDefinitions(transformBinding.Importer);
 
-            var physicsBinding = new PhysicsBinding(element, store);
+            var physicsBinding = new PhysicsBinding(element, store, context, mainThread);
             importer.IncludeDefinitions(physicsBinding.Importer);
 
             var timeBinding = new TimeBinding(element, store);

@@ -69,14 +69,14 @@ namespace Spirare
 
         protected IReadOnlyList<object> Invoke(IReadOnlyList<object> arg, Action<ArgumentParser> action)
         {
-            var parser = new ArgumentParser(arg);
+            var parser = new ArgumentParser(arg, ModuleInstance);
             action.Invoke(parser);
             return ReturnValue.Unit;
         }
 
         protected IReadOnlyList<object> Invoke(IReadOnlyList<object> arg, Func<ArgumentParser, object> func)
         {
-            var parser = new ArgumentParser(arg);
+            var parser = new ArgumentParser(arg, ModuleInstance);
             var value = func.Invoke(parser);
             return ReturnValue.FromObject(value);
         }
