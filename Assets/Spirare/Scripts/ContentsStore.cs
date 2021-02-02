@@ -39,6 +39,19 @@ namespace Spirare
             Resources.Add(resource);
         }
 
+        internal bool TryGetElementIndexById(string id, out int elementIndex)
+        {
+            elementIndex = Elements.FindIndex(x => x.Id == id);
+            if (elementIndex == -1)
+            {
+                return false;
+            }
+
+            // resource index is one-based index
+            elementIndex += 1;
+            return true;
+        }
+
         public bool TryGetElementByElementIndex(int elementIndex, out Element element)
         {
             if (elementIndex <= 0 || elementIndex > Elements.Count)
@@ -49,6 +62,7 @@ namespace Spirare
             element = Elements[elementIndex - 1];
             return true;
         }
+
 
         public bool TryGetResourceIndexById(string id, out int resourceIndex)
         {
@@ -73,5 +87,6 @@ namespace Spirare
             resource = Resources[resourceIndex - 1];
             return true;
         }
+
     }
 }
