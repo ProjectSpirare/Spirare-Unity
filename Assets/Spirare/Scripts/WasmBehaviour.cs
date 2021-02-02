@@ -170,13 +170,13 @@ namespace Spirare
                 GameObject = gameObject
             };
 
+            // WASI functions
             if (args == null)
             {
                 args = new List<string>();
             }
             var scriptName = "";
             args.Insert(0, scriptName);
-
             var envs = new List<string>();
             var argsBinding = new ArgsBinding(element, store, args, envs);
             importer.IncludeDefinitions(argsBinding.Importer);
@@ -184,6 +184,8 @@ namespace Spirare
             var fileDescriptorBinding = new FileDescriptorBinding(element, store);
             importer.IncludeDefinitions(fileDescriptorBinding.Importer);
 
+
+            // Spirare functions
             var debugBinding = new DebugBinding(element, store);
             importer.IncludeDefinitions(debugBinding.Importer);
 
@@ -195,6 +197,9 @@ namespace Spirare
 
             var physicsBinding = new PhysicsBinding(element, store, context, mainThread);
             importer.IncludeDefinitions(physicsBinding.Importer);
+
+            var textBinding = new TextBinding(element, store, context, mainThread);
+            importer.IncludeDefinitions(textBinding.Importer);
 
             var timeBinding = new TimeBinding(element, store);
             importer.IncludeDefinitions(timeBinding.Importer);
@@ -208,6 +213,7 @@ namespace Spirare
 
                 gameObjectBinding.ModuleInstance = module;
                 debugBinding.ModuleInstance = module;
+                textBinding.ModuleInstance = module;
 
                 var exportedFunctions = module.ExportedFunctions;
                 exportedFunctions.TryGetValue("start", out startFunction);

@@ -20,6 +20,20 @@ namespace Spirare.WasmBinding
         {
             get => -1;
         }
+        internal object GetElementIndexById(ArgumentParser parser)
+        {
+            if (!parser.TryReadString(out var id))
+            {
+                return InvalidElementIndex;
+            }
+
+            if (!store.TryGetElementIndexById(id, out var elementIndex))
+            {
+                return InvalidElementIndex;
+            }
+
+            return elementIndex;
+        }
 
         internal object GetResourceIndexById(ArgumentParser parser)
         {
@@ -64,5 +78,6 @@ namespace Spirare.WasmBinding
             var elementIndex = store.RegisterElement(element);
             return elementIndex;
         }
+
     }
 }
