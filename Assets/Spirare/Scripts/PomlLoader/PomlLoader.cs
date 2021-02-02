@@ -132,6 +132,13 @@ namespace Spirare
             t.localRotation = element.Rotation;
             t.localScale = element.Scale;
 
+            var el = new Element()
+            {
+                GameObject = t.gameObject,
+                Id = element.Id
+            };
+            contentsStore.RegisterElement(el);
+
             // Load child elements
             foreach (var child in element.Children)
             {
