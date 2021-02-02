@@ -43,6 +43,7 @@ namespace Spirare
             WasmValueType.Int32,
         };
 
+
         public static IReadOnlyList<WasmValueType> Vector3 = new WasmValueType[]
         {
             WasmValueType.Float32,
@@ -82,6 +83,13 @@ namespace Spirare
 
         public static IReadOnlyList<WasmValueType> String = new WasmValueType[]
         {
+            WasmValueType.Int32,
+            WasmValueType.Int32,
+        };
+
+        public static IReadOnlyList<WasmValueType> IdAndString = new WasmValueType[]
+        {
+            WasmValueType.Int32,
             WasmValueType.Int32,
             WasmValueType.Int32,
         };

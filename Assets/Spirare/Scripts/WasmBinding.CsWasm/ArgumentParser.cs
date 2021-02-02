@@ -17,6 +17,10 @@ namespace Spirare.WasmBinding
         {
             get
             {
+                if (moduleInstance == null)
+                {
+                    Debug.LogWarning("moduleInstance is null");
+                }
                 return moduleInstance.Memories[0];
             }
         }

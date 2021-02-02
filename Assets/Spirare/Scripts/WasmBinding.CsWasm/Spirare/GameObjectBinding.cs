@@ -25,6 +25,13 @@ namespace Spirare.WasmBinding.CsWasm
                      arg => Invoke(arg, SpawnObject)
                      ));
 
+            importer.DefineFunction("element_get_element_index_by_id",
+                 new DelegateFunctionDefinition(
+                     ValueType.String,
+                     ValueType.Int,
+                     arg => Invoke(arg, GetElementIndexById)
+                     ));
+
             importer.DefineFunction("element_get_resource_index_by_id",
                  new DelegateFunctionDefinition(
                      ValueType.String,
@@ -37,6 +44,11 @@ namespace Spirare.WasmBinding.CsWasm
         private object SpawnObject(ArgumentParser parser)
         {
             return gameObjectBinding.SpawnObject(parser);
+        }
+
+        private object GetElementIndexById(ArgumentParser parser)
+        {
+            return gameObjectBinding.GetElementIndexById(parser);
         }
 
         private object GetResourceIndexById(ArgumentParser parser)
