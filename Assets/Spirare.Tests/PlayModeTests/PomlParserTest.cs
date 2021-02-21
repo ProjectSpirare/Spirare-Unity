@@ -48,6 +48,32 @@ public class PomlParserTest
     }
 
     [Test]
+    public void TryParse_DodIncluded_IgnoreDod()
+    {
+        var xml = @"
+<!DOCTYPE html>
+<html>
+<scene>
+    <element/>
+    <model/>
+</scene>
+<resource>
+    <element/>
+</resource>
+</html>
+";
+
+        Parse(xml, "", out var poml, out var scene, out var elements, out _, out var resourceElements);
+        Assert.AreEqual(2, elements.Count);
+
+        Assert.AreEqual(PomlElementType.Element, elements[0].ElementType);
+        Assert.AreEqual(PomlElementType.Model, elements[1].ElementType);
+
+        Assert.AreEqual(1, resourceElements.Count);
+    }
+
+
+    [Test]
     public void TryParse_PositionAttribute()
     {
         var xml = @"
