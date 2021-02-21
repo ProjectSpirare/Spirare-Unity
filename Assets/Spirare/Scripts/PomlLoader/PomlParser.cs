@@ -12,8 +12,36 @@ namespace Spirare
     {
         public bool TryParse(string xml, string basePath, out Poml poml)
         {
-            var parseXml = $"<root>{xml}</root>";
+            try
+            {
+                poml = ParseXml(xml, basePath);
+                return true;
+            }
+            catch (XmlException)
+            {
+                try
+                {
+                    var modifiedXml = $"<root>{xml}</root>";
+                    poml = ParseXml(modifiedXml, basePath);
+                    return true;
+                }
+                catch (Exception e)
+                {
+                    Debug.LogWarning(e);
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning(e);
+            }
 
+            poml = null;
+            return false;
+        }
+
+        private Poml ParseXml(string xml, string basePath)
+        {
+            var parseXml = xml;
             var xmlDocument = new XmlDocument();
             xmlDocument.LoadXml(parseXml);
 
@@ -23,12 +51,13 @@ namespace Spirare
             var resource = xmlDocument.SelectSingleNode("//resource");
             var pomlResource = ParseResource(resource, basePath);
 
-            poml = new Poml()
+            var poml = new Poml()
             {
                 Scene = pomlScene,
                 Resource = pomlResource
             };
-            return true;
+
+            return poml;
         }
 
         private PomlScene ParseScene(XmlNode scene, string basePath)
